@@ -11,14 +11,11 @@ library(tidyr)
 library(fda)
 library(cluster)     
 library(factoextra)  
-library(dplyr)       
-library(tidyr)       
 library(dendextend)  
 library(geometry)    
 library(plotly)      
 library(patchwork)
 library(stringr)     
-library(ggplot2)
 library(purrr)
 library(cluster)
 library(NbClust)
@@ -28,7 +25,6 @@ library(ggrepel)
 library(reshape2)
 library(FactoMineR)
 library(mclust)
-library(dplyr)
 library(ggdendro)
 library(MASS)
 library(readxl)
@@ -2582,10 +2578,6 @@ long_joined_df <-
 # SampleID, Year, Species, Value, Subcluster, Original_Group
 
 # Plot as before
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(purrr)
 
 #-- Assumes long_joined_df contains:
 #   SampleID, Year, Species, Value,
