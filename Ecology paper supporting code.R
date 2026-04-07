@@ -335,7 +335,7 @@ pca_L_Scale_max_1975 <- data.frame(
 rownames(pca_L_Scale_max_1975$x[[1]]) <- Name_species
 pca_L_Scale_max_1975 <- lapply(pca_L_Scale_max_1975, function(x) x[[1]]) #Remove inner layer
 pca_L_Scale_max_1975 <- prcomp(t(PCA_Max_1975), scale.=F)
-Data_sources <- read_excel("Data_Sources.xlsx")
+Data_sources <- read_csv("Data_Sources.csv")
 print(Data_sources)
 #Remove rows that are not of interest and get rid of all the French Name + Info
 headings<-c("Name", "French Name", "Latin Name", "Order Number", "Regular for Canada",
@@ -347,6 +347,7 @@ headings<-c("Name", "French Name", "Latin Name", "Order Number", "Regular for Ca
             "Forest Crop Specilists")
 
 colnames(Data_sources)<-headings
+
 Data_sources <- Data_sources %>%
   mutate(across(everything(), ~ replace(.x, .x == "Included_Inclus", 1)))
 
