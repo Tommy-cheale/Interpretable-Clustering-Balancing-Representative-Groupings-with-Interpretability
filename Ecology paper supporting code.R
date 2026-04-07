@@ -2659,16 +2659,17 @@ prepare_group <- function(plots, total = 4, show_x = FALSE, show_y_first_only = 
   
   # Style each plot
   plots <- lapply(seq_along(plots), function(i) {
-    p <- plots[[i]]
+    p <- plots[[i]] +
+      theme(axis.title.x = element_blank(),
+            axis.title.y = element_blank())
+    
     if (!inherits(p, "gg")) return(p)  # Skip blank
     if (!show_x) {
-      p <- p + theme(axis.title.x = element_blank(),
-                     axis.text.x = element_blank(),
+      p <- p + theme(axis.text.x = element_blank(),
                      axis.ticks.x = element_blank())
     }
     if (show_y_first_only && i != 1) {
-      p <- p + theme(axis.title.y = element_blank(),
-                     axis.text.y = element_blank(),
+      p <- p + theme(axis.text.y = element_blank(),
                      axis.ticks.y = element_blank())
     }
     return(p)
@@ -2692,17 +2693,11 @@ final_plot <- group1 / group2 / group3 / group4 / group5 / group6 / group7 / gro
   plot_layout(ncol = 1)
 
 final_plot <- final_plot +
-  plot_annotation(
-    theme = theme(
-      plot.margin = margin(5, 5, 5, 5),  # Add space for axis titles
-      axis.title.x = element_text(size = 30),
-      axis.title.y = element_text(size = 30)
-    )
-  ) &
   theme(
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank()
-  )
+      plot.margin = margin(5, 5, 5, 5),  # Add space for axis titles
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank()
+    ) 
 
 # --- SHARED AXIS TITLES SECTION ---
 # Convert to grob for layout manipulation
