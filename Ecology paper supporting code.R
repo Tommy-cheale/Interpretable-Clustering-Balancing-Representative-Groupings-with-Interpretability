@@ -30,7 +30,7 @@ library(MASS)
 library(readxl)
 
 #Read in data
-All_SOCB_2019 <- read.csv("All_SOCB_2019_population_indices.csv")
+All_SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv")
 
 All_after_1975_SOCB_2019 <- All_SOCB_2019 %>%
   filter(year >= 1975)
