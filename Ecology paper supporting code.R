@@ -1871,8 +1871,6 @@ hclust_obj <- list(
 )
 class(hclust_obj) <- "hclust"
 
-library(ggdendro)
-
 dendro_data <- dendro_data(hclust_obj)
 
 merge_yvals <- unique(dendro_data$segments$yend)
