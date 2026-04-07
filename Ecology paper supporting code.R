@@ -27,6 +27,7 @@ library(FactoMineR)
 library(mclust)
 library(ggdendro)
 library(MASS)
+library(gridExtra)
 
 #Read in data
 All_SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv")
