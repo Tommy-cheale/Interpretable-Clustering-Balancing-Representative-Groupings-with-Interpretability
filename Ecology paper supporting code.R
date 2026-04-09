@@ -153,6 +153,11 @@ scree_df |>
   ) +
   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Cumulative Variance"))
 
+# Compute Cos2 scores (proportion of variance explained by first 2 PCs)
+Total_var<- scores^2 %*% fpca_result$values
+Partial_var<- scores[,1:2]^2 %*% fpca_result$values[1:2]
+
+Cos2_scores <- Partial_var/Total_var
 
 ### SJB 09/05/26: What does this code do?
 num_cols <- vapply(Data_sources, is.numeric, logical(1))
@@ -307,11 +312,7 @@ for (pair in pairs) {
 }
 
 
-# Compute Cos2 scores (proportion of variance explained by first 2 PCs)
-Total_var<- scores^2 %*% fpca_result$values
-Partial_var<- scores[,1:2]^2 %*% fpca_result$values[1:2]
 
-Cos2_scores <- Partial_var/Total_var
 
 ################################################################################
 #Filter species with low cos 2 scores (specifically those that don't reach 0.75)
