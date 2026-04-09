@@ -831,7 +831,7 @@ species_long <- species_long %>%
   )
 
 ###############################################################################################
-#########################################Plot Aerial insectoveres, Forest Birds, and Shorebirds
+#########################################Plot Aerial insectivores, Forest Birds, and Shorebirds
 ###############################################################################################
 # ggplot(species_long, aes(x = Year, y = Abundance, group = English_Name, color = Guild)) +
 #   geom_line(alpha = 0.6) +  # lighter lines for individual species
