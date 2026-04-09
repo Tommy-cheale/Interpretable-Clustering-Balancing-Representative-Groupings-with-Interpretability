@@ -128,7 +128,8 @@ k <- 15
 fpca_result <- pca.fd(bspline_fits[[k - 3]]$fd, nharm = k) # Perform FPCA
 
 # Scree plot
-scree_df <- tibble(eigenvalue = fpca_result$values) |> 
+scree_df <- tibble(eigenvalue = fpca_result$values,
+                   sd = sqrt(eigenvalue)) |> 
   mutate(pc = 1:n(),
          pve = eigenvalue / sum(eigenvalue),
          cum_pve = cumsum(pve))
@@ -153,21 +154,7 @@ scree_df |>
   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Cumulative Variance"))
 
 
-years <- 1:42   
-# Evaluate all harmonics at those points
-harm_vals <- eval.fd(years, fpca_result$harmonics)
-#Data cleaning
-scores<-fpca_result$scores
-pca_L_Scale_max_1975 <- data.frame(
-  rotation = I(list(harm_vals)),
-  sdev     = I(list(scree_data$sd)),
-  x        = I(list(scores)))
-# Assign as rownames to the scores (x)
-rownames(pca_L_Scale_max_1975$x[[1]]) <- Name_species
-pca_L_Scale_max_1975 <- lapply(pca_L_Scale_max_1975, function(x) x[[1]]) #Remove inner layer
-pca_L_Scale_max_1975 <- prcomp(t(PCA_Max_1975), scale.=F)
-
-
+### SJB 09/05/26: What does this code do?
 num_cols <- vapply(Data_sources, is.numeric, logical(1))
 Data_sources[num_cols] <- lapply(Data_sources[num_cols], function(x) {
   x[is.na(x)] <- 0
@@ -320,57 +307,11 @@ for (pair in pairs) {
 }
 
 
-################################################################################
-######################Creating the Dataframe with scores and all################
-################################################################################
+# Compute Cos2 scores (proportion of variance explained by first 2 PCs)
+Total_var<- scores^2 %*% fpca_result$values
+Partial_var<- scores[,1:2]^2 %*% fpca_result$values[1:2]
 
-
-#print(pca_L_Scale_max_1975)
-
-# Function to compute proportion of variance 
-var_si<-function(pca_L_Scale_max_1975, PC_choice=1:2){
-  upd<-NULL
-  no<-length((pca_L_Scale_max_1975$x)[,1])
-  for (i in 1:no){
-    sum<-0
-    for (j in PC_choice){
-      vals<-((pca_L_Scale_max_1975$x[i,j]))^2 *(pca_L_Scale_max_1975$sdev[j])^2
-      sum=sum+vals
-    }
-    upd<-c(upd, sum) 
-  }
-  return(upd)
-}
-
-# Function to compute the Cos2 scores
-Cos2scores<-function(pca_L_Scale_max_1975, PC_choice=1:2){
-  Max_PC<-1:length(pca_L_Scale_max_1975$sdev)
-  if (max(PC_choice) > max(Max_PC)){
-    return(paste0("Error: Please select a vector of valid PCs. The maximum is", max(Max_PC)))
-  }
-  else if (any(duplicated(PC_choice))) {
-    print("Error: please select a vector of distinct principal components")}
-  else {
-    Total_var<- var_si(pca_L_Scale_max_1975, Max_PC )
-    Partial_var<- var_si(pca_L_Scale_max_1975, PC_choice)
-    Cos2<-Partial_var/Total_var
-    return(Cos2)
-  }}
-
-#Select scores
-New_vec1_1975<-pca_L_Scale_max_1975$x
-DF_obj1_1975<-data.frame(New_vec1_1975)
-
-# Compute Cos2 scores
-Cos_2_scores_12<-Cos2scores(pca_L_Scale_max_1975, PC_choice = 1:2)
-
-#Print all cos 2 scores
-Cos_2_scores_12
-
-#Add the cos2 scores to the main table
-DF_obj1_1975$Cos_2_scores_12<-Cos_2_scores_12
-
-
+Cos2_scores <- Partial_var/Total_var
 
 ################################################################################
 #Filter species with low cos 2 scores (specifically those that don't reach 0.75)
