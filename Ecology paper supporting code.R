@@ -76,6 +76,21 @@ SOCB_2019_matrix <- SOCB_2019_wide |>
   as.matrix()
 rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(Species)
             
+# Load auxiliary data and simplify column names
+Data_sources <- read_csv("Data_Sources.csv")
+
+colnames(Data_sources) <-c("Name", "French Name", "Latin Name", "Order Number", "Regular for Canada",
+                           "Pop Change (%)", "Population Change", "Source", "Native", "New to Canada (Expanded)",
+                           "Waterfowl","Birds of Prey", "Wetland Birds", "Seabirds", "Forest Birds",
+                           "Other", "Shorebirds", "Grassland Birds", "Aerial Insectivores", "Goose Species",
+                           "Duck Species", "Dependent on Grassland", "Tolerant to Farming", "Long distance shorebirds",
+                           "Short distance shorebirds", "Forest birds wintering in SA", "Forest birds wintering in CA",
+                           "Forest Crop Specilists")
+
+# Simplify encoding of which species belong to which groups
+Data_sources <- Data_sources %>%
+  mutate(across(everything(), ~ replace(.x, .x == "Included_Inclus", 1)))
+
 ###############################################################################
 ################################## Resmoothing ################################
 ###############################################################################
@@ -158,21 +173,7 @@ pca_L_Scale_max_1975 <- data.frame(
 rownames(pca_L_Scale_max_1975$x[[1]]) <- Name_species
 pca_L_Scale_max_1975 <- lapply(pca_L_Scale_max_1975, function(x) x[[1]]) #Remove inner layer
 pca_L_Scale_max_1975 <- prcomp(t(PCA_Max_1975), scale.=F)
-Data_sources <- read_csv("Data_Sources.csv")
-print(Data_sources)
-#Remove rows that are not of interest and get rid of all the French Name + Info
-headings<-c("Name", "French Name", "Latin Name", "Order Number", "Regular for Canada",
-            "Pop Change (%)", "Population Change", "Source", "Native", "New to Canada (Expanded)",
-            "Waterfowl","Birds of Prey", "Wetland Birds", "Seabirds", "Forest Birds",
-            "Other", "Shorebirds", "Grassland Birds", "Aerial Insectivores", "Goose Species",
-            "Duck Species", "Dependent on Grassland", "Tolerant to Farming", "Long distance shorebirds",
-            "Short distance shorebirds", "Forest birds wintering in SA", "Forest birds wintering in CA",
-            "Forest Crop Specilists")
 
-colnames(Data_sources)<-headings
-
-Data_sources <- Data_sources %>%
-  mutate(across(everything(), ~ replace(.x, .x == "Included_Inclus", 1)))
 
 num_cols <- vapply(Data_sources, is.numeric, logical(1))
 Data_sources[num_cols] <- lapply(Data_sources[num_cols], function(x) {
