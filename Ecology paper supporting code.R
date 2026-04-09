@@ -104,7 +104,7 @@ bspline_fits |>
   print(n = Inf)
 
 ###############################################################################
-##################################### FPCA ####################################
+################################ Stage 1: FPCA ################################
 ###############################################################################
 
 # Conduct FPCA using selected number of basis functions
@@ -119,44 +119,18 @@ for (i in 1:2) {
        ylab = "Amplitude")
 }
 
-############################################################################
-########################Prepare Data For Scree Plot ########################
-############################################################################
+# Scree plot
+scree_df <- tibble(eigenvalue = fpca_result$values) |> 
+  mutate(pc = 1:n(),
+         pve = eigenvalue / sum(eigenvalue),
+         cum_pve = cumsum(pve))
 
-# Standard deviations:
-sd_pc <- sqrt(fpca_result$values)
-# Proportion of variance explained (per component):
-pve <- fpca_result$values / sum(fpca_result$values)
-# Cumulative PVE:
-cum_pve <- cumsum(pve)
-# Tidy data frame:
-pve_df <- data.frame(
-  pc = seq_along(pve),
-  eigenvalue = fpca_result$values,
-  sd = sd_pc,
-  pve = pve,
-  cum_pve = cum_pve
-)
-# Create a data frame for plotting
-scree_data <- pve_df %>% dplyr::rename(
-  PC = pc,
-  ExplainedVariance = pve,
-  CumulativeVariance = cum_pve
-)
-  
-# Ensure PC is a factor with levels ordered correctly
-# Filter to include only the first 8 PCs
-scree_data_filtered <- scree_data %>% filter(PC %in%  1:8)
-# Ensure PC is a factor with levels ordered correctly for the first 8 PCs
-scree_data_filtered$PC <- factor(scree_data_filtered$PC, levels = 1:8)
-
-########################################################################
-########################### Scree Plot #################################
-########################################################################
-ggplot(scree_data_filtered, aes(x = PC, y = ExplainedVariance)) +
+scree_df |> 
+  filter(pc <= 8) |> 
+  ggplot(aes(x = pc, y = pve)) +
   geom_bar(stat = "identity", fill = "blue", color = "blue", alpha = 0.7) +
-  geom_line(aes(y = CumulativeVariance, group = 1), color = "darkgreen", linewidth = 1) +
-  geom_point(aes(y = CumulativeVariance), color = "darkgreen", size = 3, shape = 17) +
+  geom_line(aes(y = cum_pve, group = 1), color = "darkgreen", linewidth = 1) +
+  geom_point(aes(y = cum_pve), color = "darkgreen", size = 3, shape = 17) +
   labs(title = "Proportion of Variance Captured by Each Functional Principal Component",
        x = "Functional Principal Component",
        y = "Proportion of Variance Explained") +
