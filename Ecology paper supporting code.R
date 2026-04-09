@@ -68,13 +68,14 @@ SOCB_2019 <- SOCB_2019 %>%
 # Create wide data
 SOCB_2019_wide <- SOCB_2019 |> 
   select(Species, year, mr_index) |> 
-  pivot_wider(names_from = "year", values_from = "mr_index")
+  pivot_wider(names_from = "Species", values_from = "mr_index")
 
 # Create data matrix required by funcitions in the fda package
 SOCB_2019_matrix <- SOCB_2019_wide |> 
-  select(-Species) |> 
+  select(-year) |> 
   as.matrix()
-rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(Species)
+
+rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(year)
             
 # Load auxiliary data and simplify column names
 Data_sources <- read_csv("Data_Sources.csv")
@@ -97,22 +98,22 @@ Data_sources <- Data_sources %>%
 
 # Fit B-splines with between 12 and 18 basis functions
 
-time_points <- 1:ncol(SOCB_2019_matrix)
+time_points <- 1:nrow(SOCB_2019_matrix)
 
 bspline_fits <- 4:42 |> 
   purrr::map(\(k){
     basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = k)
     smooth_result <- smooth.basis(argvals = time_points, 
-                                  y = data_matrix, 
+                                  y = SOCB_2019_matrix, 
                                   fdParobj = basis_obj)
     fd_obj <- smooth_result$fd
-    fit <- eval.fd(time_points,fd_obj) |> t()
+    fit <- eval.fd(time_points,fd_obj)
     mae <- max(abs(SOCB_2019_matrix - fit))
     mse <- mean((SOCB_2019_matrix - fit)^2)
     list(df = k, fd = fd_obj, fit = fit, mae = mae, mse = mse)
   })
 
-# Compare MSE
+# Compare mean absolute error and mean squared error
 bspline_fits |> 
   purrr::map(\(fit) tibble(df = fit$df, mae = fit$mae, mse = fit$mse)) |> 
   bind_rows() |> 
