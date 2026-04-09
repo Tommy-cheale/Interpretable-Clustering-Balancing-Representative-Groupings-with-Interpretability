@@ -1466,7 +1466,11 @@ ggplot(joined_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
     legend.text = element_text(size =18),
     # Subplot (facet) titles
     legend.position = "none",  # This removes the legend
-    strip.text = element_text(size = 25))
+    strip.text = element_text(size = 25)) + 
+    ylim(c(-3.5,3.5)) +
+    xlim(c(-3.5,3.5)) +
+    geom_vline(xintercept = 0) + 
+    geom_hline(yintercept = 0)
 
 
 removed_data <- joined_data %>% filter(Name %in% removed_species_list)
