@@ -127,14 +127,6 @@ bspline_fits |>
 k <- 15
 fpca_result <- pca.fd(bspline_fits[[k - 3]]$fd, nharm = k) # Perform FPCA
 
-par(mfrow = c(1, 3))  # Adjust plot window
-for (i in 1:2) {
-  plot(fpca_result$harmonics[i], 
-       main = paste("Harmonic", i), 
-       xlab = "Year", 
-       ylab = "Amplitude")
-}
-
 # Scree plot
 scree_df <- tibble(eigenvalue = fpca_result$values) |> 
   mutate(pc = 1:n(),
