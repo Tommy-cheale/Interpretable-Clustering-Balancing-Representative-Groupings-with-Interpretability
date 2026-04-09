@@ -30,113 +30,52 @@ library(MASS)
 library(gridExtra)
 library(readr)
 
-#Read in data
-All_SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv")
-
-All_after_1975_SOCB_2019 <- All_SOCB_2019 %>%
-  filter(year >= 1975)
-print(All_after_1975_SOCB_2019) #Filter to after 1975
-
-earliest_latest_1975 <- All_after_1975_SOCB_2019 %>%
-  group_by(English_Name) %>%
-  summarize(Earliest_Year = min(year),
-            Latest_Year = max(year))
-
-filtered_earliest_latest_1975 <- earliest_latest_1975 %>%
-  filter(Earliest_Year != 1975 | Latest_Year != 2016) # Remove species with incomplete data
-
-#################################### Optional plot##############################
-#This plot displays the species that don't have complete data from 1975 to 2016
+###############################################################################
+################################ Data Processing ##############################
 ###############################################################################
 
-# ggplot(filtered_earliest_latest_1975, aes(x = Earliest_Year, y = English_Name, color = Species)) +
-#   geom_point(aes(color = "Earliest Year")) +
-#   geom_point(aes(x = Latest_Year, color = "Latest Year")) +
-#   scale_color_manual(values = c("blue", "red")) +
-#   labs(title = "Earliest and Latest Year for Index \nCalculation by Species starting in 1975",
-#        x = "Year",
-#        y = "Species") +
-#   theme(legend.position = "right")
+# Load data from 2019 SOCBR
+SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv") %>%
+  select(Species = English_Name, year, index) %>%
+  arrange(Species, year)
 
-#Filter and remove species with incomplete data
-filtered_df_1975 <- All_after_1975_SOCB_2019 %>%
-  group_by(English_Name) %>%
-  filter(all(1975:2016 %in% year)) %>%
+# Filter to after 1974
+SOCB_2019 <- SOCB_2019 %>%
+  filter(year >= 1975)
+
+# Identify species with incomplete data
+SOCB_2019 <- SOCB_2019 %>%
+  group_by(Species) %>%
+  mutate(Complete = all(1975:2016 %in% year)) %>%
   ungroup()
 
-removed_species_1975 <- setdiff(All_after_1975_SOCB_2019$English_Name, filtered_df_1975$English_Name)
-removed_species_list_1975 <- unique(removed_species_1975)
+incomplete_species <- SOCB_2019 %>% 
+  filter(!Complete) |> 
+  pull(Species) |> 
+  unique()
+  
+# Remove species with incomplete data
+SOCB_2019 <- SOCB_2019 %>%
+  filter(Complete) %>%
+  select(-Complete)
 
-#Function to filter and select data of interest
-No_filter12<-function(filtered_df){
-  df_rearange<-filtered_df %>% 
-    arrange(English_Name)
-  df_split_L<-df_rearange %>% 
-    dplyr::select(year, English_Name, index) %>%
-    drop_na()  # Drop rows with NA values
-  #Select just the year, species and index columns
-  df_by_species_L<-df_split_L %>% 
-    pivot_wider(id_cols=English_Name, names_from = year, values_from = index)
-  return(df_by_species_L)
-}
+# Compute max-rescaled indices
+SOCB_2019 <- SOCB_2019 %>%
+  group_by(Species) %>%
+  mutate(mr_index = index / max(index)) |> 
+  ungroup()
 
-no_filter_filtered_df_1975<-No_filter12(filtered_df_1975)
+# Create wide data
+SOCB_2019_wide <- SOCB_2019 |> 
+  select(Species, year, mr_index) |> 
+  pivot_wider(names_from = "year", values_from = "mr_index")
 
-#Function that puts data into a matrix form ready for spline fitting
-PCA_Form12<-function(Filtered_region){
-  Mat_L<- t(as.matrix(Filtered_region)) #Transpose
-  rownames(Mat_L)<-NULL #Remove the row names (year)
-  colnames(Mat_L) <- Mat_L[1, ] #Set the column names equal to the species id
-  Mat_L <- Mat_L[- 1, ] #Remove the first column
-  DTL<-Mat_L
-  return(DTL)
-}
-
-PCA_Form_123_1975<-PCA_Form12(no_filter_filtered_df_1975)
-
-#Function that rescales based on the maximum year
-rescale_Max <- function(DT) {
-  mat <- matrix(, nrow = nrow(DT), ncol = ncol(DT))
-  Col_names <- colnames(DT)
-  for (i in 1:ncol(DT)) {
-    max1 <- max(as.numeric(DT[, i]), na.rm = TRUE)  # Handle NAs
-    c <- as.numeric(DT[, i]) / max1  # Rescale by max
-    mat[, i] <- c
-  }
-  # Convert to data frame for easier handling and set column names
-  mat <- as.data.frame(mat)
-  colnames(mat) <- Col_names
-  return(mat)
-}
-
-PCA_Max_1975<-rescale_Max(PCA_Form_123_1975)
-Name_species<-colnames(PCA_Max_1975)
-df <- as.data.frame(PCA_Max_1975)
-df$SampleID <- 1:nrow(df)
-
-# Pivot longer
-tidy_df <- df %>%
-  pivot_longer(
-    cols = -SampleID,
-    names_to = "Species",
-    values_to = "Value"
-  ) %>%
-  mutate(Value = as.numeric(Value))  # Ensure values are numeric
-
-wide_df <- tidy_df %>%
-  pivot_wider(names_from = Species, values_from = Value)
-
-#Raw rescaled values
-Raw_rescaled_for_later<-wide_df
-
-# Save time vector for later
-time_points <- wide_df$SampleID
-
-# Convert the rest to matrix
-data_matrix <- wide_df %>%
-  dplyr::select(-SampleID) %>%
+# Create data matrix required by funcitions in the fda package
+SOCB_2019_matrix <- SOCB_2019_wide |> 
+  select(-Species) |> 
   as.matrix()
-
+rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(Species)
+            
 ###############################################################################
 ########################## Test basis functions (12-18) #######################
 ###############################################################################
