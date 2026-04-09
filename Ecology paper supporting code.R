@@ -77,113 +77,39 @@ SOCB_2019_matrix <- SOCB_2019_wide |>
 rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(Species)
             
 ###############################################################################
-########################## Test basis functions (12-18) #######################
+################################## Resmoothing ################################
 ###############################################################################
 
-# 12 basis functions
-basis_obj12 <- create.bspline.basis(rangeval = range(time_points), nbasis = 12)
-smooth_result12 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj12)
-fd_obj12 <- smooth_result12$fd
+# Fit B-splines with between 12 and 18 basis functions
 
-# 13 basis functions
-basis_obj13 <- create.bspline.basis(rangeval = range(time_points), nbasis = 13)
-smooth_result13 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj13)
-fd_obj13 <- smooth_result13$fd
+time_points <- 1:ncol(SOCB_2019_matrix)
 
-# 14 basis functions
-basis_obj14 <- create.bspline.basis(rangeval = range(time_points), nbasis = 14)
-smooth_result14 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj14)
-fd_obj14 <- smooth_result14$fd
-
-# 15 basis functions
-basis_obj15 <- create.bspline.basis(rangeval = range(time_points), nbasis = 15)
-smooth_result15 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj15)
-
-fd_obj15 <- smooth_result15$fd
-
-# 16 basis functions
-basis_obj16 <- create.bspline.basis(rangeval = range(time_points), nbasis = 16)
-smooth_result16 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj16)
-fd_obj16 <- smooth_result16$fd
-
-# 17 basis functions
-basis_obj17 <- create.bspline.basis(rangeval = range(time_points), nbasis = 17)
-smooth_result17 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj17)
-smooth_result17
-fd_obj17 <- smooth_result17$fd
-
-# 18 basis functions
-basis_obj18 <- create.bspline.basis(rangeval = range(time_points), nbasis = 18)
-smooth_result18 <- smooth.basis(argvals = time_points, 
-                                y = data_matrix, 
-                                fdParobj = basis_obj18)
-fd_obj18 <- smooth_result18$fd
-
-
-#######################################################################
-########## Get basis range from smooth Result and compute MSE##########
-#######################################################################
-basis_range <- smooth_result15$fd$basis$rangeval
-eval_grid <- seq(basis_range[1], basis_range[2], length.out = 100)
-evaluate_fd <- function(fd_obj, grid) {
-  eval.fd(grid, fd_obj)
-}
-smooth_list <- list(smooth_result12, smooth_result13, smooth_result14, smooth_result15, smooth_result16, smooth_result17, smooth_result18)
-eval_matrices <- lapply(smooth_list, function(res) evaluate_fd(res$fd, eval_grid))
-ref_index <- 4
-max_abs_diff_per_species <- numeric(ncol(eval_matrices[[ref_index]]))
-mse_per_species <- numeric(ncol(eval_matrices[[ref_index]]))
-for (i in seq_len(ncol(eval_matrices[[ref_index]]))) {
-  ref_curve <- eval_matrices[[ref_index]][, i]
-  diffs <- sapply(seq_along(eval_matrices)[-ref_index], function(j) {
-    other_curve <- eval_matrices[[j]][, i]
-    max(abs(ref_curve - other_curve))
+bspline_fits <- 4:42 |> 
+  purrr::map(\(k){
+    basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = k)
+    smooth_result <- smooth.basis(argvals = time_points, 
+                                  y = data_matrix, 
+                                  fdParobj = basis_obj)
+    fd_obj <- smooth_result$fd
+    fit <- eval.fd(time_points,fd_obj) |> t()
+    mae <- max(abs(SOCB_2019_matrix - fit))
+    mse <- mean((SOCB_2019_matrix - fit)^2)
+    list(df = k, fd = fd_obj, fit = fit, mae = mae, mse = mse)
   })
-  max_abs_diff_per_species[i] <- max(diffs)
-  mses <- sapply(seq_along(eval_matrices)[-ref_index], function(j) {
-    other_curve <- eval_matrices[[j]][, i]
-    mean((ref_curve - other_curve)^2)
-  })
-  mse_per_species[i] <- max(mses)
-}
 
-max_diff_overall <- max(max_abs_diff_per_species)
-max_mse_overall <- max(mse_per_species)
+# Compare MSE
+bspline_fits |> 
+  purrr::map(\(fit) tibble(df = fit$df, mae = fit$mae, mse = fit$mse)) |> 
+  bind_rows() |> 
+  print(n = Inf)
 
+###############################################################################
+##################################### FPCA ####################################
+###############################################################################
 
-#Print the MSE overall#
-cat("Max absolute difference across all species:", max_diff_overall, "\n")
-cat("Max MSE across all species:", max_mse_overall, "\n")
-
-
-#############################################################################
-################################ Final Choice: Choose 15 basis ##############
-#############################################################################
-
-basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = 15)
-# Smooth data: rows = time, columns = species
-smooth_result <- smooth.basis(argvals = time_points, 
-                              y = data_matrix, 
-                              fdParobj = basis_obj)
-
-fd_obj <- smooth_result$fd
-
-# Plot smooth basis
-#plot(fd_obj)
-
-fpca_result <- pca.fd(fd_obj, nharm = 15) # Perform FPCA
+# Conduct FPCA using selected number of basis functions
+k <- 15
+fpca_result <- pca.fd(bspline_fits[[k - 3]]$fd, nharm = k) # Perform FPCA
 
 par(mfrow = c(1, 3))  # Adjust plot window
 for (i in 1:2) {
@@ -192,23 +118,6 @@ for (i in 1:2) {
        xlab = "Year", 
        ylab = "Amplitude")
 }
-
-#Set years: 1975-2016
-years <- 1:42
-harm_vals <- fda::eval.fd(years, fpca_result$harmonics) # Evaluate harmonics at years
-
-#Check Dimensions. This should be no of years considered by the no of PCs
-dim(harm_vals)
-
-harm_1 <- -harm_vals[, 1, drop = TRUE]  
-harm_2 <- -harm_vals[, 2, drop = TRUE]  
-harm_3 <- -harm_vals[, 3, drop = TRUE]  
-
-# Plot the harmonics
-# plot(harm_1)
-# plot(harm_2)
-# plot(harm_3)
-
 
 ############################################################################
 ########################Prepare Data For Scree Plot ########################
