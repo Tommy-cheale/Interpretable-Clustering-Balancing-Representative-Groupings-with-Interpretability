@@ -39,6 +39,9 @@ SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv") %>%
   select(Species = English_Name, year, index) %>%
   arrange(Species, year)
 
+# Load group data
+SOCB_2019_habitat <- read_csv("SOCB_2019_habitat_groups.csv")
+
 # Filter to after 1974
 SOCB_2019 <- SOCB_2019 %>%
   filter(year >= 1975)
@@ -77,21 +80,6 @@ SOCB_2019_matrix <- SOCB_2019_wide |>
 
 rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(year)
             
-# Load auxiliary data and simplify column names
-Data_sources <- read_csv("Data_Sources.csv")
-
-colnames(Data_sources) <-c("Name", "French Name", "Latin Name", "Order Number", "Regular for Canada",
-                           "Pop Change (%)", "Population Change", "Source", "Native", "New to Canada (Expanded)",
-                           "Waterfowl","Birds of Prey", "Wetland Birds", "Seabirds", "Forest Birds",
-                           "Other", "Shorebirds", "Grassland Birds", "Aerial Insectivores", "Goose Species",
-                           "Duck Species", "Dependent on Grassland", "Tolerant to Farming", "Long distance shorebirds",
-                           "Short distance shorebirds", "Forest birds wintering in SA", "Forest birds wintering in CA",
-                           "Forest Crop Specilists")
-
-# Simplify encoding of which species belong to which groups
-Data_sources <- Data_sources %>%
-  mutate(across(everything(), ~ replace(.x, .x == "Included_Inclus", 1)))
-
 ###############################################################################
 ################################## Resmoothing ################################
 ###############################################################################
