@@ -147,12 +147,12 @@ Partial_var<- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2]
 
 Cos2_scores <- Partial_var/Total_var
 
-### SJB 09/05/26: What does this code do?
-num_cols <- vapply(Data_sources, is.numeric, logical(1))
-Data_sources[num_cols] <- lapply(Data_sources[num_cols], function(x) {
-  x[is.na(x)] <- 0
-  x
-})
+# Construct output data frame
+fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
+                      PC1 = fpca_result$scores[,1],
+                      PC2 = fpca_result$scores[,2],
+                      Cos2 = Cos2_scores) |> 
+  left_join(SOCB_2019_habitat, by = "Species")
 
 ################################################################################
 #######Looking for Representative and Exclusive groups in the report############
