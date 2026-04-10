@@ -154,8 +154,8 @@ scree_df |>
   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Cumulative Variance"))
 
 # Compute Cos2 scores (proportion of variance explained by first 2 PCs)
-Total_var<- scores^2 %*% fpca_result$values
-Partial_var<- scores[,1:2]^2 %*% fpca_result$values[1:2]
+Total_var<- fpca_result$scores^2 %*% fpca_result$values
+Partial_var<- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2]
 
 Cos2_scores <- Partial_var/Total_var
 
