@@ -1,12 +1,14 @@
 Species,Waterfowl,Birds of Prey,Wetland Birds,Seabirds,Forest Birds,Shorebirds,Aerial Insectivores,Grassland Birds
 Alder Flycatcher,0,0,0,0,1,0,0,0
 American Avocet,0,0,0,0,0,1,0,0
+American Bittern,0,0,1,0,0,0,0,0
 American Coot,0,0,1,0,0,0,0,0
 American Crow,0,0,0,0,0,0,0,0
 American Dipper,0,0,1,0,0,0,0,0
 American Golden-Plover,0,0,0,0,0,1,0,0
 American Goldfinch,0,0,0,0,1,0,0,0
 American Kestrel,0,1,0,0,0,0,0,0
+American Pipit,0,0,0,0,0,0,0,0
 American Redstart,0,0,0,0,1,0,0,0
 American Robin,0,0,0,0,0,0,0,0
 American Three-toed Woodpecker,0,0,0,0,1,0,0,0
@@ -36,16 +38,16 @@ Black-backed Woodpecker,0,0,0,0,1,0,0,0
 Black-bellied Plover,0,0,0,0,0,1,0,0
 Black-billed Cuckoo,0,0,0,0,1,0,0,0
 Black-billed Magpie,0,0,0,0,0,0,0,0
+Blackburnian Warbler,0,0,0,0,1,0,0,0
 Black-capped Chickadee,0,0,0,0,1,0,0,0
 Black-chinned Hummingbird,0,0,0,0,0,0,0,0
 Black-crowned Night-Heron,0,0,1,0,0,0,0,0
 Black-headed Grosbeak,0,0,0,0,1,0,0,0
 Black-legged Kittiwake,0,0,0,1,0,0,0,0
+Blackpoll Warbler,0,0,0,0,1,0,0,0
 Black-throated Blue Warbler,0,0,0,0,1,0,0,0
 Black-throated Gray Warbler,0,0,0,0,1,0,0,0
 Black-throated Green Warbler,0,0,0,0,1,0,0,0
-Blackburnian Warbler,0,0,0,0,1,0,0,0
-Blackpoll Warbler,0,0,0,0,1,0,0,0
 Blue Jay,0,0,0,0,0,0,0,0
 Blue-headed Vireo,0,0,0,0,1,0,0,0
 Blue-winged Teal,1,0,0,0,0,0,0,0
@@ -120,9 +122,14 @@ Glaucous-winged Gull,0,0,0,1,0,0,0,0
 Golden Eagle,0,1,0,0,0,0,0,0
 Golden-crowned Kinglet,0,0,0,0,1,0,0,0
 Golden-crowned Sparrow,0,0,0,0,0,0,0,0
+Golden-winged Warbler,0,0,0,0,1,0,0,0
+Grasshopper Sparrow,0,0,0,0,0,0,0,1
+Gray Catbird,0,0,0,0,0,0,0,0
+Gray Jay,0,0,0,0,1,0,0,0
 Gray Partridge,0,0,0,0,0,0,0,0
 Gray-cheeked Thrush,0,0,0,0,1,0,0,0
 Gray-crowned Rosy-Finch,0,0,0,0,0,0,0,0
+Great Black-backed Gull,0,0,0,1,0,0,0,0
 Great Blue Heron,0,0,1,0,0,0,0,0
 Great Crested Flycatcher,0,0,0,0,1,0,0,0
 Great Horned Owl,0,0,0,0,1,0,0,0
@@ -137,6 +144,7 @@ Hermit Thrush,0,0,0,0,1,0,0,0
 Herring Gull,0,0,0,1,0,0,0,0
 Horned Grebe,0,0,1,0,0,0,0,0
 Horned Lark,0,0,0,0,0,0,0,1
+House Finch,0,0,0,0,0,0,0,0
 House Sparrow,0,0,0,0,0,0,0,0
 House Wren,0,0,0,0,0,0,0,0
 Hudsonian Godwit,0,0,0,0,0,1,0,0
@@ -194,6 +202,8 @@ Orchard Oriole,0,0,0,0,0,0,0,0
 Osprey,0,1,0,0,0,0,0,0
 Ovenbird,0,0,0,0,1,0,0,0
 Pacific Loon,0,0,1,0,0,0,0,0
+Pacific Wren,0,0,0,0,1,0,0,0
+Pacific-slope Flycatcher,0,0,0,0,1,0,0,0
 Palm Warbler,0,0,0,0,1,0,0,0
 Pectoral Sandpiper,0,0,0,0,0,1,0,0
 Pelagic Cormorant,0,0,0,1,0,0,0,0
@@ -202,6 +212,7 @@ Philadelphia Vireo,0,0,0,0,1,0,0,0
 Pied-billed Grebe,0,0,1,0,0,0,0,0
 Pigeon Guillemot,0,0,0,1,0,0,0,0
 Pileated Woodpecker,0,0,0,0,1,0,0,0
+Pine Grosbeak,0,0,0,0,1,0,0,0
 Pine Siskin,0,0,0,0,1,0,0,0
 Pine Warbler,0,0,0,0,1,0,0,0
 Prairie Falcon,0,1,0,0,0,0,0,0
@@ -214,6 +225,7 @@ Red Knot,0,0,0,0,0,1,0,0
 Red-breasted Nuthatch,0,0,0,0,1,0,0,0
 Red-breasted Sapsucker,0,0,0,0,1,0,0,0
 Red-eyed Vireo,0,0,0,0,1,0,0,0
+Redhead,1,0,0,0,0,0,0,0
 Red-headed Woodpecker,0,0,0,0,1,0,0,0
 Red-naped Sapsucker,0,0,0,0,1,0,0,0
 Red-necked Grebe,0,0,1,0,0,0,0,0
@@ -221,7 +233,6 @@ Red-shouldered Hawk,0,1,0,0,0,0,0,0
 Red-tailed Hawk,0,1,0,0,0,0,0,0
 Red-throated Loon,0,0,1,0,0,0,0,0
 Red-winged Blackbird,0,0,1,0,0,0,0,0
-Redhead,1,0,0,0,0,0,0,0
 Ring-billed Gull,0,0,1,0,0,0,0,0
 Ring-necked Duck,1,0,0,0,0,0,0,0
 Ring-necked Pheasant,0,0,0,0,0,0,0,0
@@ -238,6 +249,7 @@ Ruffed Grouse,0,0,0,0,1,0,0,0
 Rufous Hummingbird,0,0,0,0,1,0,0,0
 Rusty Blackbird,0,0,0,0,1,0,0,0
 Sanderling,0,0,0,0,0,1,0,0
+Sandhill Crane,0,0,1,0,0,0,0,0
 Savannah Sparrow,0,0,0,0,0,0,0,1
 Say's Phoebe,0,0,0,0,0,0,0,0
 Scarlet Tanager,0,0,0,0,1,0,0,0
@@ -258,6 +270,7 @@ Sora,0,0,1,0,0,0,0,0
 Spotted Sandpiper,0,0,0,0,0,1,0,0
 Spotted Towhee,0,0,0,0,0,0,0,0
 Sprague's Pipit,0,0,0,0,0,0,0,1
+Spruce Grouse,0,0,0,0,1,0,0,0
 Steller's Jay,0,0,0,0,1,0,0,0
 Stilt Sandpiper,0,0,0,0,0,1,0,0
 Surfbird,0,0,0,0,0,1,0,0
@@ -271,6 +284,7 @@ Tree Swallow,0,0,0,0,0,0,1,0
 Trumpeter Swan,1,0,0,0,0,0,0,0
 Turkey Vulture,0,1,0,0,0,0,0,0
 Upland Sandpiper,0,0,0,0,0,0,0,1
+Varied Thrush,0,0,0,0,1,0,0,0
 Vaux's Swift,0,0,0,0,0,0,1,0
 Veery,0,0,0,0,1,0,0,0
 Vesper Sparrow,0,0,0,0,0,0,0,1
