@@ -196,100 +196,55 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
                       Cos2 = Cos2_scores) |> 
   left_join(SOCB_2019_habitat, by = "Species")
 
-################################################################################
-#Filter species with low cos 2 scores (specifically those that don't reach 0.75)
-################################################################################
+# Compute reconstructed trajectories based on first 2 PCs
+harmonics <- fda::eval.fd(1:42, fpca_result$harmonics)
 
-low_cos2_species <- DF_obj1_1975[DF_obj1_1975$Cos_2_scores_12 < 0.75, ]
-low_cos2_species$Name <- rownames(low_cos2_species)
-
+fpca_fit <- fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) |> 
+  as_tibble() |> 
+  set_names(1975:2016) |> 
+  add_column(Species = SOCB_2019_habitat |> pull("Species"), .before = 1) |> 
+  pivot_longer(-Species, names_to = "year", values_to = "fit") |> 
+  mutate(year = as.numeric(year))
+  
 ################################################################################################
-##################################### Breaking down clusters ###################################
+##################################### Stage 2: Subdividing #####################################
 ################################################################################################
 
-
-clustering_results <- list()
-plots_list <- list()
-species_table_list <- list()
-tags_table_list <- list()
-centers_table_list <- list()
-silhouette_plots_list <- list()
-elbow_plots_list <- list()
-
-# Loop over each habitat (Original_Group)
-for (habitat in Habitiat_category_columns) {
-  # Subset data for the current habitat
-  habitat_data <- cleaned_data %>% filter(Original_Group == habitat)
-  
-  # Convert tag columns to numeric
-  habitat_data <- habitat_data %>%
-    mutate(across(all_of(tag_cols), ~ as.numeric(as.character(.))))
-  
-  
-  #habitat_data <- habitat_data %>% filter(!Outlier)  # Remove KMM outliers
-  #habitat_data <- habitat_data %>% filter(!Outlier_LOF)  # Remove LOF outliers 
-  
-  
-  # Initialize a data frame to store average silhouette scores for each candidate k
-  sil_summary <- data.frame(k = integer(), avg_sil = double())
-  
-  # If there is only one species in this habitat, assign it to cluster 1.
-  if(nrow(habitat_data) < 2) {
-    habitat_data$Cluster <- 1
-    optimal_k <- 1
-  } else {
-    # Consider k from 2 to up to 10 (or less if not enough rows)
-    k_range <- 2:min(10, nrow(habitat_data))
-    silhouette_avgs <- numeric(length(k_range))
+subdivide <- fpca_output |> 
+  filter(!is.na(Guild),
+         Cos2 > .75) |> 
+  group_by(Guild) |> 
+  group_map(\(guild_data,keys){
+    # Extract guild name
+    guild <- keys[[1]]
     
-    # Pre-compute the distance matrix on PC1 and PC2
-    d <- dist(habitat_data[, c("PC1", "PC2")])
+    # Compute distance matrix
+    d <- dist(guild_data[, c("PC1", "PC2")])
     
-    # Loop over each candidate k to calculate average silhouette width
-    for (i in seq_along(k_range)) {
-      k <- k_range[i]
-      set.seed(123)  # for reproducibility
-      km_res <- kmeans(habitat_data[, c("PC1", "PC2")], centers = k, nstart = 25)
-      sil <- silhouette(km_res$cluster, d)
-      silhouette_avgs[i] <- mean(sil[, 3])
-      sil_summary <- rbind(sil_summary, data.frame(k = k, avg_sil = mean(sil[, 3])))
-    }
+    # Apply k-means clustering for each possible k
+    km_res <- lapply(2:10, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
     
-    # Create an elbow plot: average silhouette score vs. k
-    elbow_plot <- ggplot(sil_summary, aes(x = k, y = avg_sil)) +
-      geom_line() +
-      geom_point(size = 3) +
-      labs(title = paste(habitat),
-           x = "Number of Clusters (k)",
-           y = "Average Silhouette Score") +
-      theme_minimal()+
-      theme(
-        axis.title.x = element_text(size = 20),  # Increase x-axis title size
-        axis.title.y = element_text(size = 20),  # Increase y-axis title size
-        plot.title = element_text(size = 35, hjust = 0.5)  # Increase title size and center it
-      )
+    # Compute silhouette scores
+    sil <- lapply(km_res, \(km) silhouette(km$cluster, d))
     
-    elbow_plots_list[[habitat]] <- elbow_plot
+    # Compute average silhouette scores
+    sil_summary <- tibble(Guild = guild,
+                          k = 2:10,
+                          avg_sil = sapply(sil, \(s) mean(s[,"sil_width"])))
     
     # Select the k with the maximum average silhouette width
-    optimal_index <- which.max(silhouette_avgs)
-    optimal_k <- k_range[optimal_index]
+    optimal_k <- sil_summary |> 
+      filter(avg_sil == max(avg_sil)) |> 
+      pull("k")
     
-    # Run final KMeans clustering using the optimal k
-    set.seed(123)
-    km_final <- kmeans(habitat_data[, c("PC1", "PC2")], centers = optimal_k, nstart = 25)
-    habitat_data$Cluster <- km_final$cluster
-    
-    # Compute the silhouette object for the optimal clustering (for the ordered silhouette plot)
-    sil_obj <- silhouette(km_final$cluster, d)
-    sil_df <- as.data.frame(sil_obj)
-    sil_df <- sil_df %>% arrange(cluster, sil_width) %>%
-      mutate(order = row_number())
-    
-    # Create the ordered silhouette plot using ggplot2
-    sil_plot <- ggplot(sil_df, aes(x = order, y = sil_width, fill = factor(cluster))) +
+    # Construct silhouette plot for optimal k
+    sil_plot <- sil[[optimal_k - 1]] |> 
+      as_tibble() |> 
+      arrange(cluster, sil_width) |> 
+      rowid_to_column("order") |> 
+      ggplot(aes(x = order, y = sil_width, fill = factor(cluster))) +
       geom_bar(stat = "identity", width = 1) +
-      labs(title = paste("Ordered Silhouette Plot for", habitat, "- k =", optimal_k),
+      labs(title = paste("Ordered Silhouette Plot for", guild, "- k =", optimal_k),
            x = "Ordered Observations", y = "Silhouette Width", fill = "Cluster") +
       theme_minimal()+
       theme(
@@ -298,294 +253,90 @@ for (habitat in Habitiat_category_columns) {
         plot.title = element_text(size = 25, hjust = 0.5)  # Increase title size and center it
       )
     
-    # Save the silhouette plot for the current habitat
-    silhouette_plots_list[[habitat]] <- sil_plot
-  }
-  
-  # Compute cluster centers and a dispersion measure (std dev of distances from center)
-  centers_df <- habitat_data %>%
-    group_by(Cluster) %>%
-    summarize(
-      center_PC1 = mean(PC1),
-      center_PC2 = mean(PC2),
-      Count = n(),
-      dispersion = sd(sqrt((PC1 - mean(PC1))^2 + (PC2 - mean(PC2))^2))
-    ) %>%
-    ungroup() %>%
-    mutate(Original_Group = habitat)
-  
-  # Create a table listing species per cluster
-  species_table <- habitat_data %>%
-    group_by(Cluster) %>%
-    summarize(
-      Species = paste(Name, collapse = ", "),
-      Count = n()
-    ) %>%
-    ungroup() %>%
-    mutate(Original_Group = habitat)
-  
-  # Create a table with the breakdown of tag counts per cluster
-  tags_table <- habitat_data %>%
-    group_by(Cluster) %>%
-    summarize(across(all_of(tag_cols), sum)) %>%
-    ungroup() %>%
-    mutate(Original_Group = habitat)
-  
-  # Generate a scatter plot for this habitat with clusters and centers
-  p <- ggplot(habitat_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
-    geom_point(size = 2, alpha = 0.7) +
-    geom_point(data = centers_df, aes(x = center_PC1, y = center_PC2),
-               color = "black", size = 4, shape = 8) +
-    labs(title = paste("KMeans Clustering for", habitat, "- Optimal k =", optimal_k),
-         color = "Cluster") +
-    theme_minimal() +
-    theme(
-      axis.title.x = element_text(size = 20),  # Increase x-axis title size
-      axis.title.y = element_text(size = 20),  # Increase y-axis title size
-      plot.title = element_text(size = 30, hjust = 0.5)  # Increase title size and center it
-    )
-  
-  # Save the results in the respective lists
-  plots_list[[habitat]] <- p
-  clustering_results[[habitat]] <- habitat_data
-  species_table_list[[habitat]] <- species_table
-  tags_table_list[[habitat]] <- tags_table
-  centers_table_list[[habitat]] <- centers_df
-}
-
-# Combine results from all habitats into one data frame per result type
-all_clusters <- do.call(rbind, clustering_results)
-all_species_table <- do.call(rbind, species_table_list)
-all_tags_table <- do.call(rbind, tags_table_list)
-all_centers_table <- do.call(rbind, centers_table_list)
-
-# Display the species per cluster table, the tag breakdown table, and the cluster centers
-print(all_species_table)
-print(all_tags_table)
-print(all_centers_table)
-
-# Display the plots for each habitat: scatter plot, elbow plot, and ordered silhouette plot (if available)
-for (habitat in names(plots_list)) {
-  print(plots_list[[habitat]])
-  if (!is.null(elbow_plots_list[[habitat]])) {
-    print(elbow_plots_list[[habitat]])
-  }
-  if (!is.null(silhouette_plots_list[[habitat]])) {
-    print(silhouette_plots_list[[habitat]])
-  }
-}
-
-# Print the elbow plots for the initial break
-elbow_plots_list
-
-
-#############################################################################
-###################################Build patchwork for plots ################
-#############################################################################
-
-# Ensure all plots share the same x and y limits
-for (i in seq_along(elbow_plots_list)) {
-  elbow_plots_list[[i]] <- elbow_plots_list[[i]] +
-    scale_x_continuous(limits = c(1, 10), breaks = 1:10) +
-    scale_y_continuous(limits = c(0.2, 0.6)) +  # Adjust as needed
-    theme_minimal(base_size = 10) +
-    theme(
-      axis.title = element_blank(),
-      plot.title = element_text(size = 25, hjust = 0.5),
-      axis.text.x = element_blank(),
-      axis.text.y = element_blank(),
-      axis.ticks = element_blank()
-    )
-}
-
-# Determine which plots are on the left and bottom for labels
-left_indices <- c(1, 4, 7)
-bottom_indices <- c(6, 7, 8)
-
-for (i in seq_along(elbow_plots_list)) {
-  if (i %in% left_indices) {
-    elbow_plots_list[[i]] <- elbow_plots_list[[i]] +
-      theme(axis.text.y = element_text(size = 18, hjust = 0.5)) 
-  }
-  if (i %in% bottom_indices) {
-    elbow_plots_list[[i]] <- elbow_plots_list[[i]] +
-      theme(axis.text.x = element_text(size = 18, hjust = 0.5)) 
-  }
-}
-
-left_tit <-  c(4)
-bot_tit <- c(8)
-
-for (i in seq_along(elbow_plots_list)) {
-  if (i %in% left_tit) {
-    elbow_plots_list[[i]] <- elbow_plots_list[[i]] +
-      theme( axis.title.y = element_text(size = 40, hjust = 0.5)) +
-      ylab("Average Silhouette Score")
-  }
-  if (i %in% bot_tit) {
-    elbow_plots_list[[i]] <- elbow_plots_list[[i]] +
-      theme(axis.title.x = element_text(size = 40, hjust = 0.5)) +
-      xlab("Number of Clusters (k)")
-  }
-}
-
-# Add an empty plot for the 9th space
-empty_plot <- ggplot() + theme_void()
-
-# Combine using patchwork
-combined_plot <- wrap_plots(c(elbow_plots_list, list(empty_plot)),
-                            nrow = 3, ncol = 3) +
-  plot_annotation(
-    title = "Average Silhouette Score Computed for k = {2,...,10} Clusters Over Each Guild",
-    theme = theme(plot.title = element_text(hjust = 0.5, size = 30, face = "bold"))
-  )
-
-################################################################################
-###################################### 3 by 3 plot for elbow plots #############
-################################################################################
-print(combined_plot)
-################################################################################
-
-print(all_species_table)
-
-# Save this as a file
-#write.table(all_species_table, "Cluster_Membership.txt", sep = "\t", row.names = FALSE, quote = FALSE)
-
-# Table of clusters and species
-print(all_tags_table)
-
-# Table of centres
-print(all_centers_table)
-
-# Save these as a file if you want
-#write.table(all_tags_table, "Tags_of_Breaks.txt", sep = "\t", row.names = FALSE, quote = FALSE)
-#write.table(all_centers_table, "Summary_of_Breaks.txt", sep = "\t", row.names = FALSE, quote = FALSE)
-
-
-
-
-#####################################################################################
-###################################Removing single clusters##########################
-#####################################################################################
-
-# Reshape the all_species_table so that each species is on its own row.
-all_species_long <- all_species_table %>%
-  separate_rows(Species, sep = ",") %>%
-  mutate(Species = trimws(Species))
-
-# Merge with cleaned_data by matching species names.
-merged_data <- cleaned_data %>%
-  inner_join(all_species_long, by = c("Name" = "Species"))
-
-# Remove species in clusters that have only one species.
-merged_data <- merged_data %>%
-  group_by(Original_Group.y, Cluster) %>%
-  mutate(cluster_size = n()) %>%
-  ungroup()
-
-# Identify species in singleton clusters
-singleton_species <- merged_data %>%
-  filter(cluster_size == 1) %>%
-  pull(Name) %>%
-  unique()
-
-# Keep only non-singleton clusters
-non_singletons <- merged_data %>%
-  filter(cluster_size > 1)
-
-###############################################################################
-# Identify outlier species within each cluster using Mahalanobis distance.
-# Mahalanobis requires the covariance matrix, and vector of means per cluster.
-###############################################################################
-
-# Compute Mahalanobis distance safely within clusters
-mahal_cluster_outliers <- non_singletons %>%
-  group_by(Original_Group.y, Cluster) %>%
-  group_modify(~ {
-    cluster_data <- .x
-    mat <- cluster_data[, c("PC1", "PC2")]
+    # Add cluster identification to original data
+    output <- guild_data |> 
+      add_column(Guild = guild,
+                 Cluster = km_res[[optimal_k - 1]]$cluster)
     
-    if (nrow(mat) < 3) {
-      cluster_data <- cluster_data %>%
-        mutate(
-          mahal_dist = NA,
-          dist_threshold = NA,
-          outlier_detection_skipped = TRUE,
-          skip_reason = "Too few points"
-        )
-      return(cluster_data)
-    }
-    
-    cov_matrix <- cov(mat)
-    if (det(cov_matrix) == 0) {
-      cluster_data <- cluster_data %>%
-        mutate(
-          mahal_dist = NA,
-          dist_threshold = NA,
-          outlier_detection_skipped = TRUE,
-          skip_reason = "Singular covariance"
-        )
-      return(cluster_data)
-    }
-    
-    cluster_data <- cluster_data %>%
-      mutate(
-        mahal_dist = mahalanobis(mat, colMeans(mat), cov_matrix),
-        dist_threshold = qchisq(0.95, df = 2),
-        outlier_detection_skipped = FALSE,
-        skip_reason = NA_character_
+    # Generate a scatter plot for this habitat with clusters and centers
+    p <- ggplot(guild_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
+      geom_point(size = 2, alpha = 0.7) +
+      geom_point(data = km_res[[optimal_k - 1]]$centers, aes(x = PC1, y = PC2),
+                 color = "black", size = 4, shape = 8) +
+      labs(title = paste("KMeans Clustering for", guild, "- Optimal k =", optimal_k),
+           color = "Cluster") +
+      theme_minimal() +
+      theme(
+        axis.title.x = element_text(size = 20),  # Increase x-axis title size
+        axis.title.y = element_text(size = 20),  # Increase y-axis title size
+        plot.title = element_text(size = 30, hjust = 0.5)  # Increase title size and center it
       )
-    return(cluster_data)
-  }) %>%
-  ungroup()
+    
+    list(output = output,
+         kmeans = km_res,
+         k = optimal_k,
+         silhouette = sil_summary,
+         silhouette_plot = sil_plot,
+         cluster_plot = p)
+  })
 
+# Elbow plots
+subdivide |> 
+  purrr::map(\(res) res$silhouette) |> 
+  bind_rows() |> 
+  ggplot(aes(x = k, y = avg_sil)) +
+  geom_line() +
+  geom_point(size = 3) +
+  labs(x = "Number of Clusters (k)",
+       y = "Average Silhouette Score") +
+  theme_minimal()+
+  facet_wrap(vars(Guild)) +
+  scale_x_continuous(limits = c(1, 10), breaks = 1:10) +
+  theme(
+    axis.title.x = element_text(size = 20),  # Increase x-axis title size
+    axis.title.y = element_text(size = 20),  # Increase y-axis title size
+    plot.title = element_text(size = 35, hjust = 0.5, face = "bold")  # Increase title size and center it
+  ) + 
+  plot_annotation(title = "Average Silhouette Score Computed for k = {2,...,10} Clusters Over Each Guild"
+)
 
-skipped_clusters_summary <- mahal_cluster_outliers %>%
-  filter(outlier_detection_skipped) %>%
-  distinct(Original_Group.y, Cluster, skip_reason)
+ggsave("plots/Elbow.pdf", width = 12, height =8)
 
-print(skipped_clusters_summary)
+# Combine clustering and identify singletons and outliers
+mahal_dist <- function(M){
+  if(nrow(M) < 3){
+    return(rep(NA,nrow(M)))
+  }
+  else{
+    m <- colMeans(M)
+    V <- var(M)
+    mahalanobis(M, m, V)
+  }
+}
 
-# Filter out outliers
-outlier_species <- mahal_cluster_outliers %>%
-  filter(!is.na(mahal_dist) & mahal_dist > dist_threshold) %>%
-  pull(Name) %>%
-  unique()
+clusters <- subdivide |> 
+  purrr::map(\(res){
+    res$output |>  
+    group_by(Cluster) |>
+      group_map(\(clust,keys){
+        clust |> 
+          mutate(Cluster = keys[[1]],
+                 Singleton = (n() == 1),
+                 Mahal = mahal_dist(clust |> select(PC1,PC2)))
+        })
+  }) |> 
+  bind_rows() |> 
+  mutate(Outlier = Mahal > qchisq(0.95, df = 2))
 
-# Combine all species to be removed.
-removed_species <- union(singleton_species, outlier_species)
-
-# Create the new cleaned_data_no_outlier by removing these species.
-cleaned_data_no_outlier <- cleaned_data %>%
-  filter(!Name %in% removed_species)
-
-# Optionally, save the list of removed species:
-removed_species_list <- removed_species
-
-# Display results of outlier species
-print(cleaned_data_no_outlier)
-print(removed_species_list)
-
-# Plotting and output remain unchanged
-all_species_long <- all_species_table %>%
-  separate_rows(Species, sep = ",") %>%
-  mutate(Species = trimws(Species))
-
-joined_data <- cleaned_data %>%
-  inner_join(all_species_long, by = c("Name" = "Species"))
-
-
-###############################################################################
-######### 2-D Projection coefficents after first split with outliers ##########
-###############################################################################
-
-ggplot(joined_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
+# Plot clusters and label outliers and singletons
+clusters |> 
+  ggplot(aes(x = PC1, y = PC2, color = factor(Cluster))) +
   geom_point(size=2.5, alpha = 0.6) +
-  geom_point(data = joined_data %>% filter(Name %in% removed_species_list),
+  geom_point(data = clusters %>% filter(Singleton | Outlier),
              color = "red", shape = 17, size = 4, show.legend = FALSE) +
-  geom_text(data = joined_data %>% filter(Name %in% removed_species_list),
-            aes(label = Name), vjust = 1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
-  facet_wrap(~ Original_Group.y) +
+  geom_text(data = clusters %>% filter(Singleton | Outlier),
+            aes(label = Species), vjust = 1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
+  facet_wrap(~ Guild) +
   theme_minimal() +
   labs(title = "Species Projection Coefficients by Guild Sub-Cluster for FPC1 and FPC2",
        x = "FPC1",
@@ -606,29 +357,15 @@ ggplot(joined_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
     geom_vline(xintercept = 0) + 
     geom_hline(yintercept = 0)
 
-
-removed_data <- joined_data %>% filter(Name %in% removed_species_list)
-removed_data %>% dplyr::select(Name, PC1, PC2)
-
-############################################################################
-############################ Plot the outliers #############################
-############################################################################
-# Create a data frame for plotting
-plot_data <- tibble(
-  Year = years,
-  `Evening Grosbeak` = removed_data$PC1[1] * rot1 + removed_data$PC2[1] * rot2,
-  `Rusty Blackbird`  = removed_data$PC1[2] * rot1 + removed_data$PC2[2] * rot2,
-  `Trumpeter Swan`   = removed_data$PC1[3] * rot1 + removed_data$PC2[3] * rot2,
-  `Wandering Tattler`= removed_data$PC1[4] * rot1 + removed_data$PC2[4] * rot2
-) %>%
-  pivot_longer(
-    cols = -Year,
-    names_to = "Species",
-    values_to = "Abundance"
-  )
-# Plot
-ggplot(plot_data, aes(x = Year, y = Abundance, color = Species)) +
+# Plot tends for outlying species
+clusters |> 
+  filter(Singleton | Outlier) |> 
+  left_join(SOCB_2019, by = c("Species")) |> 
+  mutate(mr_index = mr_index - mean(mr_index)) |> 
+  left_join(fpca_fit, by = c("Species","year")) |> 
+  ggplot(aes(x = year, y = mr_index, color = Species)) +
   geom_line(linewidth = 1.5) +
+  geom_line(mapping = aes(x = year, y = fit), lty = 2,linewidth = 1.5) +
   facet_wrap(~ Species, ncol = 2, scales = "fixed") +
   scale_color_manual(values = c(
     "Evening Grosbeak"   = "steelblue",
