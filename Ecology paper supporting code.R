@@ -39,8 +39,8 @@ SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv") %>%
   select(Species = English_Name, year, index) %>%
   arrange(Species, year)
 
-# Load group data
-SOCB_2019_habitat <- read_csv("SOCB_2019_habitat_groups.csv")
+# Load Guild data
+SOCB_2019_habitat <- read_csv("SOCB_2019_habitat_guilds.csv")
 
 # Filter to after 1974
 SOCB_2019 <- SOCB_2019 %>%
@@ -73,7 +73,7 @@ SOCB_2019_wide <- SOCB_2019 |>
   select(Species, year, mr_index) |> 
   pivot_wider(names_from = "Species", values_from = "mr_index")
 
-# Create data matrix required by funcitions in the fda package
+# Create data matrix required by functions in the fda package
 SOCB_2019_matrix <- SOCB_2019_wide |> 
   select(-year) |> 
   as.matrix()
@@ -84,22 +84,22 @@ rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(year)
 ################################ Data Explorattion #############################
 ################################################################################
 
-# Compute mean trends by group
+# Compute mean trends by guild
 SOCB_2019_mean_guild <- SOCB_2019 |> 
   left_join(SOCB_2019_habitat, by = "Species") |> 
-  group_by(Group, year) |> 
+  group_by(Guild, year) |> 
   summarize(mr_mean = mean(mr_index))
 
-# Plot rescaled curves for select groups
+# Plot rescaled curves for select guilds
 SOCB_2019 |> 
   left_join(SOCB_2019_habitat, by = "Species") |> 
-  filter(Group %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))) |> 
-  ggplot(aes(x = year, y = mr_index, group = Species, color = Group)) +
+  filter(Guild %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))) |> 
+  ggplot(aes(x = year, y = mr_index, group = Species, color = Guild)) +
   geom_line(alpha = 0.4) +
-  facet_wrap(~ Group) +  # individual species lines
+  facet_wrap(~ Guild) +  # individual species lines
   geom_line(
-    data = SOCB_2019_mean_guild |> filter(Group %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))),
-    aes(x = year, y = mr_mean, color = Group),
+    data = SOCB_2019_mean_guild |> filter(Guild %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))),
+    aes(x = year, y = mr_mean, color = Guild),
     inherit.aes = FALSE,
     size = 1.5
   ) +
