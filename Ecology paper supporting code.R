@@ -80,6 +80,51 @@ SOCB_2019_matrix <- SOCB_2019_wide |>
 
 rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(year)
             
+################################################################################
+################################ Data Explorattion #############################
+################################################################################
+
+# Compute mean trends by group
+SOCB_2019_mean_guild <- SOCB_2019 |> 
+  left_join(SOCB_2019_habitat, by = "Species") |> 
+  group_by(Group, year) |> 
+  summarize(mr_mean = mean(mr_index))
+
+# Plot rescaled curves for select groups
+SOCB_2019 |> 
+  left_join(SOCB_2019_habitat, by = "Species") |> 
+  filter(Group %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))) |> 
+  ggplot(aes(x = year, y = mr_index, group = Species, color = Group)) +
+  geom_line(alpha = 0.4) +
+  facet_wrap(~ Group) +  # individual species lines
+  geom_line(
+    data = SOCB_2019_mean_guild |> filter(Group %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))),
+    aes(x = year, y = mr_mean, color = Group),
+    inherit.aes = FALSE,
+    size = 1.5
+  ) +
+  scale_color_manual(values = c(
+    "Shorebirds" = "#ff7f0e",
+    "Forest Birds" = "#8c564b",
+    "Aerial Insectivores" = "#7f7f7f"
+  )) +
+  labs(
+    title = "Rescaled Abundance Over Time for Selected Guilds",
+    y = "Rescaled Annual Abundance",
+    x = "Year",
+    color = "Guild"
+  ) + 
+  theme_minimal() +
+  theme(legend.position = "none",
+        strip.text = element_text(size = 25),
+        plot.title = element_text(size = 35, face = "bold"),        # main title
+        axis.title = element_text(size = 25, face = "bold"),        # x and y axis titles
+        axis.text = element_text(size = 18)  
+  )
+
+ggsave("plots/Examples.pdf", width = 12, height =8)
+
+
 ###############################################################################
 ################################## Resmoothing ################################
 ###############################################################################
@@ -401,7 +446,7 @@ species_long <- species_long %>%
 #   theme(legend.position = "none")
 
 
-mean_guild <- species_long %>%
+SOCB_2019_mean_guild <- species_long %>%
   group_by(Guild, Year) %>%
   summarize(Mean_Abundance = mean(Abundance, na.rm = TRUE), .groups = "drop")
 
@@ -411,7 +456,7 @@ mean_guild <- species_long %>%
 ggplot(species_long, aes(x = Year, y = Abundance, group = English_Name, color = Guild)) +
   geom_line(alpha = 0.4) +  # individual species lines
   geom_line(
-    data = mean_guild,
+    data = SOCB_2019_mean_guild,
     aes(x = Year, y = Mean_Abundance, color = Guild),
     inherit.aes = FALSE,
     size = 1.5
