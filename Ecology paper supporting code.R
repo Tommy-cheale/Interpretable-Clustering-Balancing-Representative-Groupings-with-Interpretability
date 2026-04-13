@@ -5,9 +5,7 @@
 # If you have any questions regarding this code, please contact Tommy Cheale at Tommycheale@gmail.com
 
 # Load in required packages
-library(dplyr)
-library(ggplot2)
-library(tidyr)
+library(tidyverse)
 library(fda)
 library(cluster)     
 library(factoextra)  
@@ -15,8 +13,6 @@ library(dendextend)
 library(geometry)    
 library(plotly)      
 library(patchwork)
-library(stringr)     
-library(purrr)
 library(cluster)
 library(NbClust)
 library(grid)
@@ -28,7 +24,6 @@ library(mclust)
 library(ggdendro)
 library(MASS)
 library(gridExtra)
-library(readr)
 
 ###############################################################################
 ################################ Data Processing ##############################
