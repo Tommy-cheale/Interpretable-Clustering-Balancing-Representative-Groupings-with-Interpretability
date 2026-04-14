@@ -210,7 +210,18 @@ fpca_fit <- fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) |>
 ##################################### Stage 2: Subdividing #####################################
 ################################################################################################
 
-subdivide <- fpca_output |> 
+mahal_dist <- function(M){
+  if(nrow(M) < 3){
+    return(rep(NA,nrow(M)))
+  }
+  else{
+    m <- colMeans(M)
+    V <- var(M)
+    mahalanobis(M, m, V)
+  }
+}
+
+subdivide1 <- fpca_output |> 
   filter(!is.na(Guild),
          Cos2 > .75) |> 
   group_by(Guild) |> 
@@ -237,52 +248,31 @@ subdivide <- fpca_output |>
       filter(avg_sil == max(avg_sil)) |> 
       pull("k")
     
-    # Construct silhouette plot for optimal k
-    sil_plot <- sil[[optimal_k - 1]] |> 
-      as_tibble() |> 
-      arrange(cluster, sil_width) |> 
-      rowid_to_column("order") |> 
-      ggplot(aes(x = order, y = sil_width, fill = factor(cluster))) +
-      geom_bar(stat = "identity", width = 1) +
-      labs(title = paste("Ordered Silhouette Plot for", guild, "- k =", optimal_k),
-           x = "Ordered Observations", y = "Silhouette Width", fill = "Cluster") +
-      theme_minimal()+
-      theme(
-        axis.title.x = element_text(size = 15),  # Increase x-axis title size
-        axis.title.y = element_text(size = 15),  # Increase y-axis title size
-        plot.title = element_text(size = 25, hjust = 0.5)  # Increase title size and center it
-      )
-    
-    # Add cluster identification to original data
+    # Check for outliers/singletons
     output <- guild_data |> 
       add_column(Guild = guild,
-                 Cluster = km_res[[optimal_k - 1]]$cluster)
+                 Cluster = km_res[[optimal_k - 1]]$cluster) |> 
+      group_by(Cluster) |>
+      group_map(\(clust,keys){
+        clust |> 
+          mutate(Cluster = keys[[1]],
+                 Singleton = (n() == 1),
+                 Mahal = mahal_dist(clust |> select(PC1,PC2)))
+      }) |> 
+      bind_rows() |> 
+      mutate(Outlier = Mahal > qchisq(0.95, df = 2))
     
-    # Generate a scatter plot for this habitat with clusters and centers
-    p <- ggplot(guild_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
-      geom_point(size = 2, alpha = 0.7) +
-      geom_point(data = km_res[[optimal_k - 1]]$centers, aes(x = PC1, y = PC2),
-                 color = "black", size = 4, shape = 8) +
-      labs(title = paste("KMeans Clustering for", guild, "- Optimal k =", optimal_k),
-           color = "Cluster") +
-      theme_minimal() +
-      theme(
-        axis.title.x = element_text(size = 20),  # Increase x-axis title size
-        axis.title.y = element_text(size = 20),  # Increase y-axis title size
-        plot.title = element_text(size = 30, hjust = 0.5)  # Increase title size and center it
-      )
     
     list(output = output,
          kmeans = km_res,
          k = optimal_k,
-         silhouette = sil_summary,
-         silhouette_plot = sil_plot,
-         cluster_plot = p)
+         silhouette = sil,
+         silhouette_summary = sil_summary)
   })
 
 # Elbow plots
-subdivide |> 
-  purrr::map(\(res) res$silhouette) |> 
+subdivide1 |> 
+  purrr::map(\(res) res$silhouette_summary) |> 
   bind_rows() |> 
   ggplot(aes(x = k, y = avg_sil)) +
   geom_line() +
@@ -302,63 +292,14 @@ subdivide |>
 
 ggsave("plots/Elbow.pdf", width = 12, height =8)
 
-# Combine clustering and identify singletons and outliers
-mahal_dist <- function(M){
-  if(nrow(M) < 3){
-    return(rep(NA,nrow(M)))
-  }
-  else{
-    m <- colMeans(M)
-    V <- var(M)
-    mahalanobis(M, m, V)
-  }
-}
+# Extract data on clusters for all guilds
+initial_clusters <- subdivide1 |> 
+  purrr::map(\(res) res$output) |>
+  bind_rows()
 
-clusters <- subdivide |> 
-  purrr::map(\(res){
-    res$output |>  
-    group_by(Cluster) |>
-      group_map(\(clust,keys){
-        clust |> 
-          mutate(Cluster = keys[[1]],
-                 Singleton = (n() == 1),
-                 Mahal = mahal_dist(clust |> select(PC1,PC2)))
-        })
-  }) |> 
-  bind_rows() |> 
-  mutate(Outlier = Mahal > qchisq(0.95, df = 2))
 
-# Plot clusters and label outliers and singletons
-clusters |> 
-  ggplot(aes(x = PC1, y = PC2, color = factor(Cluster))) +
-  geom_point(size=2.5, alpha = 0.6) +
-  geom_point(data = clusters %>% filter(Singleton | Outlier),
-             color = "red", shape = 17, size = 4, show.legend = FALSE) +
-  geom_text(data = clusters %>% filter(Singleton | Outlier),
-            aes(label = Species), vjust = 1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
-  facet_wrap(~ Guild) +
-  theme_minimal() +
-  labs(title = "Species Projection Coefficients by Guild Sub-Cluster for FPC1 and FPC2",
-       x = "FPC1",
-       y = "FPC2",
-       color = "Sub-Cluster")+
-  theme(
-    axis.title.x = element_text(size = 30),  # Increase x-axis title size
-    axis.title.y = element_text(size = 30),  # Increase y-axis title size
-    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),  # Increase title size and center it
-    # Legend title
-    legend.title = element_text(size = 30),
-    legend.text = element_text(size =18),
-    # Subplot (facet) titles
-    legend.position = "none",  # This removes the legend
-    strip.text = element_text(size = 25)) + 
-    ylim(c(-3.5,3.5)) +
-    xlim(c(-3.5,3.5)) +
-    geom_vline(xintercept = 0) + 
-    geom_hline(yintercept = 0)
-
-# Plot tends for outlying species
-clusters |> 
+# Plot trajectories for outlying species
+initial_clusters |> 
   filter(Singleton | Outlier) |> 
   left_join(SOCB_2019, by = c("Species")) |> 
   mutate(mr_index = mr_index - mean(mr_index)) |> 
