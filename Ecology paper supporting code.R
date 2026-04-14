@@ -373,6 +373,34 @@ final_clusters <- subdivide2 |>
   purrr::map(\(res) res$output) |>
   bind_rows()
 
+# Plot clusters labelling outliers and singletons
+final_clusters |> 
+  ggplot(aes(x = PC1, y = PC2, color = factor(Cluster))) +
+  geom_point(size=2.5, alpha = 0.6) +
+  geom_point(data = initial_clusters %>% filter(Singleton | Outlier),
+             color = "red", shape = 17, size = 4, show.legend = FALSE) +
+  geom_text(data = initial_clusters %>% filter(Singleton | Outlier),
+            aes(label = Species), color = "red", vjust = -1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
+  facet_wrap(~ Guild) +
+  theme_minimal() +
+  labs(title = "Species Projection Coefficients by Guild Sub-Cluster for FPC1 and FPC2",
+       x = "FPC1",
+       y = "FPC2",
+       color = "Sub-Cluster")+
+  theme(
+    axis.title.x = element_text(size = 30),  # Increase x-axis title size
+    axis.title.y = element_text(size = 30),  # Increase y-axis title size
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),  # Increase title size and center it
+    # Legend title
+    legend.title = element_text(size = 30),
+    legend.text = element_text(size =18),
+    # Subplot (facet) titles
+    legend.position = "none",  # This removes the legend
+    strip.text = element_text(size = 25)) + 
+  ylim(c(-3.5,3.5)) +
+  xlim(c(-3.5,3.5)) +
+  geom_vline(xintercept = 0) + 
+  geom_hline(yintercept = 0)
 
 ######################################################################################################################
 ######################################################################################################################
