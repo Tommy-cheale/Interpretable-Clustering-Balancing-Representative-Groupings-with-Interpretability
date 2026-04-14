@@ -228,7 +228,7 @@ subdivide1 <- fpca_output |>
   group_map(\(guild_data,keys){
     # Extract guild name
     guild <- keys[[1]]
-    
+ 
     # Compute distance matrix
     d <- dist(guild_data[, c("PC1", "PC2")])
     
@@ -328,179 +328,51 @@ initial_clusters |>
     plot.title = element_text(size = 28, face = "bold", hjust = 0.5)
   )
 
-##########################################################################################
-##########################################################################################
-#Second Run of Analysis (after Identification of Outliers)################################
-##########################################################################################
-##########################################################################################
-cleaned_data_no_outlier
-clustering_results <- list()
-plots_list <- list()
-species_table_list <- list()
-tags_table_list <- list()
-centers_table_list <- list()
-silhouette_plots_list <- list()
-elbow_plots_list <- list()
-
-# Loop over each habitat (Original_Group)
-for (habitat in Habitiat_category_columns) {
-  # Subset data for the current habitat
-  habitat_data <- cleaned_data_no_outlier %>% filter(Original_Group == habitat)
-  
-  # Convert tag columns to numeric
-  habitat_data <- habitat_data %>%
-    mutate(across(all_of(tag_cols), ~ as.numeric(as.character(.))))
-  
-  
-  #habitat_data <- habitat_data %>% filter(!Outlier)  # Remove KMM outliers
-  #habitat_data <- habitat_data %>% filter(!Outlier_LOF)  # Remove LOF outliers 
-  
-  
-  # Initialize a data frame to store average silhouette scores for each candidate k
-  sil_summary <- data.frame(k = integer(), avg_sil = double())
-  
-  # If there is only one species in this habitat, assign it to cluster 1.
-  if(nrow(habitat_data) < 2) {
-    habitat_data$Cluster <- 1
-    optimal_k <- 1
-  } else {
-    # Consider k from 2 to up to 10 (or less if not enough rows)
-    k_range <- 2:min(10, nrow(habitat_data))
-    silhouette_avgs <- numeric(length(k_range))
+# Repeat clustering excluding outliers and singletons
+subdivide2 <- fpca_output |> 
+  left_join(initial_clusters |> select(Species, Singleton, Outlier), by = c("Species")) |> 
+  filter(!is.na(Guild),
+         Cos2 > .75) |> 
+  group_by(Guild) |> 
+  group_map(\(guild_data,keys){
+    # Extract guild name
+    guild <- keys[[1]]
     
-    # Pre-compute the distance matrix on PC1 and PC2
-    d <- dist(habitat_data[, c("PC1", "PC2")])
+    # Compute distance matrix
+    d <- dist(guild_data[, c("PC1", "PC2")])
     
-    # Loop over each candidate k to calculate average silhouette width
-    for (i in seq_along(k_range)) {
-      k <- k_range[i]
-      set.seed(123)  # for reproducibility
-      km_res <- kmeans(habitat_data[, c("PC1", "PC2")], centers = k, nstart = 25)
-      sil <- silhouette(km_res$cluster, d)
-      silhouette_avgs[i] <- mean(sil[, 3])
-      sil_summary <- rbind(sil_summary, data.frame(k = k, avg_sil = mean(sil[, 3])))
-    }
+    # Apply k-means clustering for each possible k
+    km_res <- lapply(2:10, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
     
-    # Create an elbow plot: average silhouette score vs. k
-    elbow_plot <- ggplot(sil_summary, aes(x = k, y = avg_sil)) +
-      geom_line() +
-      geom_point(size = 3) +
-      labs(title = paste("Elbow Plot (Silhouette Score) for", habitat),
-           x = "Number of Clusters (k)",
-           y = "Average Silhouette Score") +
-      theme_minimal()
-    elbow_plots_list[[habitat]] <- elbow_plot
+    # Compute silhouette scores
+    sil <- lapply(km_res, \(km) silhouette(km$cluster, d))
+    
+    # Compute average silhouette scores
+    sil_summary <- tibble(Guild = guild,
+                          k = 2:10,
+                          avg_sil = sapply(sil, \(s) mean(s[,"sil_width"])))
     
     # Select the k with the maximum average silhouette width
-    optimal_index <- which.max(silhouette_avgs)
-    optimal_k <- k_range[optimal_index]
+    optimal_k <- sil_summary |> 
+      filter(avg_sil == max(avg_sil)) |> 
+      pull("k")
     
-    # Run final KMeans clustering using the optimal k
-    set.seed(123)
-    km_final <- kmeans(habitat_data[, c("PC1", "PC2")], centers = optimal_k, nstart = 25)
-    habitat_data$Cluster <- km_final$cluster
+    # Check for outliers/singletons
+    output <- guild_data |> 
+      add_column(Guild = guild,
+                 Cluster = km_res[[optimal_k - 1]]$cluster) 
     
-    # Compute the silhouette object for the optimal clustering (for the ordered silhouette plot)
-    sil_obj <- silhouette(km_final$cluster, d)
-    sil_df <- as.data.frame(sil_obj)
-    sil_df <- sil_df %>% arrange(cluster, sil_width) %>%
-      mutate(order = row_number())
-    
-    # Create the ordered silhouette plot using ggplot2
-    sil_plot <- ggplot(sil_df, aes(x = order, y = sil_width, fill = factor(cluster))) +
-      geom_bar(stat = "identity", width = 1) +
-      labs(title = paste("Ordered Silhouette Plot for", habitat, "- k =", optimal_k),
-           x = "Ordered Observations", y = "Silhouette Width", fill = "Cluster") +
-      theme_minimal()
-    
-    # Save the silhouette plot for the current habitat
-    silhouette_plots_list[[habitat]] <- sil_plot
-  }
-  
-  # Compute cluster centers and a dispersion measure (std dev of distances from center)
-  centers_df <- habitat_data %>%
-    group_by(Cluster) %>%
-    summarize(
-      center_PC1 = mean(PC1),
-      center_PC2 = mean(PC2),
-      Count = n(),
-      dispersion = sd(sqrt((PC1 - mean(PC1))^2 + (PC2 - mean(PC2))^2))
-    ) %>%
-    ungroup() %>%
-    mutate(Original_Group = habitat)
-  
-  # Create a table listing species per cluster
-  species_table <- habitat_data %>%
-    group_by(Cluster) %>%
-    summarize(
-      Species = paste(Name, collapse = ", "),
-      Count = n()
-    ) %>%
-    ungroup() %>%
-    mutate(Original_Group = habitat)
-  
-  # Create a table with the breakdown of tag counts per cluster
-  tags_table <- habitat_data %>%
-    group_by(Cluster) %>%
-    summarize(across(all_of(tag_cols), sum)) %>%
-    ungroup() %>%
-    mutate(Original_Group = habitat)
-  
-  # Generate a scatter plot for this habitat with clusters and centers
-  p <- ggplot(habitat_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
-    geom_point(size = 2, alpha = 0.7) +
-    geom_point(data = centers_df, aes(x = center_PC1, y = center_PC2),
-               color = "black", size = 4, shape = 8) +
-    labs(title = paste("KMeans Clustering for", habitat, "- Optimal k =", optimal_k),
-         color = "Cluster") +
-    theme_minimal()
-  
-  # Save the results in the respective lists
-  plots_list[[habitat]] <- p
-  clustering_results[[habitat]] <- habitat_data
-  species_table_list[[habitat]] <- species_table
-  tags_table_list[[habitat]] <- tags_table
-  centers_table_list[[habitat]] <- centers_df
-}
+    list(output = output,
+         kmeans = km_res,
+         k = optimal_k,
+         silhouette = sil,
+         silhouette_summary = sil_summary)
+  })
 
-# Combine results from all habitats into one data frame per result type
-all_clusters <- do.call(rbind, clustering_results)
-all_species_table <- do.call(rbind, species_table_list)
-all_tags_table <- do.call(rbind, tags_table_list)
-all_centers_table <- do.call(rbind, centers_table_list)
+final_clusters <- subdivide2 |> 
+  purrr::map(\(res) res$output) |>
+  bind_rows()
 
-# Display the species per cluster table, the tag breakdown table, and the cluster centers
-print(all_species_table)
-print(unique(all_species_table$Original_Group))
-print(all_tags_table)
-print(all_centers_table)
-
-# Display the plots for each habitat: scatter plot, elbow plot, and ordered silhouette plot (if available)
-for (habitat in names(plots_list)) {
-  print(plots_list[[habitat]])
-  if (!is.null(elbow_plots_list[[habitat]])) {
-    print(elbow_plots_list[[habitat]])
-  }
-  if (!is.null(silhouette_plots_list[[habitat]])) {
-    print(silhouette_plots_list[[habitat]])
-  }
-}
-
-
-
-print(all_species_table)
-print(all_tags_table)
-print(all_centers_table)
-
-# write.csv(all_tags_table, "all_tags_table.csv", row.names = FALSE, fileEncoding = "UTF-8")
-# write.table(all_centers_table, "Summary_of_Breaks.txt", sep = "\t", row.names = FALSE, quote = FALSE)
-
-# Reorder the columns
-export_table <- all_species_table %>%
-  dplyr::select(Cluster, Original_Group, Count, Species)
-
-# Save to CSV
-#write.csv(export_table, "all_species_table.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 ######################################################################################################################
 ######################################################################################################################
