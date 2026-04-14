@@ -406,6 +406,11 @@ final_clusters |>
 
 ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 
+# List species by guild and cluster
+final_clusters |> 
+  group_by(Guild, Cluster) |> 
+  summarize(Species = str_c(Species, collapse = ", "))
+
 ######################################################################################################################
 ######################################################################################################################
 
