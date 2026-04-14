@@ -172,13 +172,15 @@ scree_df |>
        y = "Proportion of Variance Explained") +
   theme_minimal() +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 22),  # Increase x-axis text size
+    axis.text.x = element_text(hjust = 1, size = 22),  # Increase x-axis text size
     axis.text.y = element_text(size = 22),  # Increase y-axis text size
     axis.title.x = element_text(size = 22),  # Increase x-axis title size
     axis.title.y = element_text(size = 22),  # Increase y-axis title size
     plot.title = element_text(size = 25, hjust = 0.5)  # Increase title size and center it
   ) +
   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Cumulative Variance"))
+
+ggsave("plots/Scree.pdf", width = 12, height = 8)
 
 # Compute Cos2 scores (proportion of variance explained by first 2 PCs)
 Total_var<- fpca_result$scores^2 %*% fpca_result$values |> 
@@ -383,7 +385,7 @@ final_clusters |>
             aes(label = Species), color = "red", vjust = -1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
   facet_wrap(~ Guild) +
   theme_minimal() +
-  labs(title = "Species Projection Coefficients by Guild Sub-Cluster for FPC1 and FPC2",
+  labs(title = "Species Projection Coefficients by Guild Sub-Cluster",
        x = "FPC1",
        y = "FPC2",
        color = "Sub-Cluster")+
@@ -401,6 +403,8 @@ final_clusters |>
   xlim(c(-3.5,3.5)) +
   geom_vline(xintercept = 0) + 
   geom_hline(yintercept = 0)
+
+ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 
 ######################################################################################################################
 ######################################################################################################################
