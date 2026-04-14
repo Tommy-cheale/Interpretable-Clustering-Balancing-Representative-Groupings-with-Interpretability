@@ -47,15 +47,26 @@ SOCB_2019 <- SOCB_2019 %>%
   mutate(Complete = all(1975:2016 %in% year)) %>%
   ungroup()
 
-incomplete_species <- SOCB_2019 %>% 
+removed_species <- SOCB_2019 %>% 
   filter(!Complete) |> 
-  pull(Species) |> 
-  unique()
+  group_by(Species) |> 
+  summarize(Start = min(year)) |> 
+  mutate(Reason = "Incomplete",
+         Description = paste("No data before",Start)) |> 
+  select(-Start)    
   
 # Remove species with incomplete data
 SOCB_2019 <- SOCB_2019 %>%
   filter(Complete) %>%
   select(-Complete)
+
+# Identify species with only Other habitat tag or No habitat tags
+removed_species <- SOCB_2019_habitat |> 
+  filter(Guild %in% c("Other","None")) |> 
+  mutate(Reason = Guild,
+         Description = ifelse(Guild == "Other", "Tagged as other", "No guild tag")) |> 
+  select(-Guild) |> 
+  bind_rows(removed_species)
 
 # Compute max-rescaled indices
 SOCB_2019 <- SOCB_2019 %>%
@@ -224,7 +235,7 @@ mahal_dist <- function(M){
 }
 
 subdivide1 <- fpca_output |> 
-  filter(!is.na(Guild),
+  filter(! (Guild %in% c("Other","None")),
          Cos2 > .75) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
