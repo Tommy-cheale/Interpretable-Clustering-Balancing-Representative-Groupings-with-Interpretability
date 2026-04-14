@@ -197,7 +197,7 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
   left_join(SOCB_2019_habitat, by = "Species")
 
 # Compute reconstructed trajectories based on first 2 PCs
-harmonics <- fda::eval.fd(1:42, fpca_result$harmonics)
+harmonics <- fda::eval.fd(time_points, fpca_result$harmonics)
 
 fpca_fit <- fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) |> 
   as_tibble() |> 
