@@ -212,7 +212,10 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
 # Compute reconstructed trajectories based on first 2 PCs
 harmonics <- fda::eval.fd(time_points, fpca_result$harmonics)
 
-fpca_fit <- fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) |> 
+mean <- fda::eval.fd(time_points, fpca_result$meanfd) |> 
+  as.vector()
+
+fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + mean) |> 
   as_tibble() |> 
   set_names(1975:2016) |> 
   add_column(Species = SOCB_2019_habitat |> pull("Species"), .before = 1) |> 
@@ -315,7 +318,7 @@ initial_clusters <- subdivide1 |>
 initial_clusters |> 
   filter(Singleton | Outlier) |> 
   left_join(SOCB_2019, by = c("Species")) |> 
-  mutate(mr_index = mr_index - mean(mr_index)) |> 
+  mutate(mr_index = mr_index) |> 
   left_join(fpca_fit, by = c("Species","year")) |> 
   ggplot(aes(x = year, y = mr_index, color = Species)) +
   geom_line(linewidth = 1.5) +
