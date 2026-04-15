@@ -497,7 +497,8 @@ clusters_list <- subclusters |>
   purrr::map(\(sc){
     list(species = final_clusters |> filter(Subcluster == sc),
          lineage = sc)
-  })
+  }) |> 
+  structure(names = subclusters)
 
 cluster_indices <- setNames(-seq_len(length(clusters_list)), names(clusters_list))
 next_index <- 1
@@ -627,13 +628,13 @@ while (length(clusters_list) > 1) {
 }
 
 # Construct hclust obj to make use of existing functions for visualizing clusters
-n_orig <- length(initial_clusters)
+n_orig <- length(subclusters)
 
 hclust_obj <- list(
   merge = merge_matrix,
   height = merge_heights,
   order = 1:n_orig,
-  labels = names(initial_clusters),
+  labels = subclusters,
   method = "complete-linkage",
   call = match.call()
 ) |> 
@@ -667,7 +668,7 @@ merge_labels_df <- left_join(merge_labels_df, midpoints, by = "y")
 
 label_offset <- max(dendro_data$segments$yend) * 0.11
 
-dendro_plot <- ggplot(segment(dendro_data)) +
+ggplot(segment(dendro_data)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_text(data = label(dendro_data),
             aes(x = x, y = -label_offset, label = label),
