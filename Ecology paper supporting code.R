@@ -453,20 +453,16 @@ final_clusters |>
 final_clusters <- final_clusters |> 
   mutate(Subcluster = paste(Guild, Cluster))
 
-initial_clusters <- split(final_clusters, final_clusters$Subcluster)
+# Create cluster list structure
+clusters_list <- final_clusters |> 
+  pull("Subcluster") |> 
+  unique() |> 
+  purrr::map(\(sc){
+    list(species = final_clusters |> filter(Subcluster == sc),
+         lineage = sc)
+  })
 
-clusters_list <- list()
-
-for (cl in names(initial_clusters)) {
-  df <- initial_clusters[[cl]]
-  clusters_list[[cl]] <- list(
-    species = df,
-    lineage = cl
-  )
-}
-
-m <- length(clusters_list)
-cluster_indices <- setNames(-seq_len(m), names(clusters_list))
+cluster_indices <- setNames(-seq_len(length(clusters_list)), names(clusters_list))
 next_index <- 1
 
 merge_matrix <- NULL
