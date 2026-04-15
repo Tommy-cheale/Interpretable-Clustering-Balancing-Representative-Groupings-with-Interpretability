@@ -445,18 +445,53 @@ final_clusters |>
   group_by(Guild, Cluster) |> 
   summarize(Species = str_c(Species, collapse = ", "))
 
+# Add a unique label for each cluster (e.g., "Forest Birds 1")
+final_clusters <- final_clusters |> 
+  mutate(Subcluster = paste(Guild, Cluster))
+
+# Compute fits at cluster means
+fpca_means <- final_clusters |> 
+  group_by(Guild, Cluster, Subcluster) |> 
+  summarize(PC1 = mean(PC1),
+            PC2 = mean(PC2)) |> 
+  reframe(year = 1975:2016,
+          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + mean)
+
+# Plot original trajectories by subcluster
+my_label <- function
+final_clusters |> 
+  filter(!(Singleton | Outlier)) |> 
+  select(Species, Guild, Cluster, Subcluster) |> 
+  left_join(SOCB_2019, by = "Species") |> 
+  ggplot(aes(x = year, y = mr_index)) +
+  geom_line(aes(group = Species), color = "orange", linewidth = 0.4) +
+  geom_line(data = fpca_means, aes(x = year, y = Mean),
+            color = "darkblue", linewidth = 1.5) +
+  facet_grid(Guild ~ Cluster) + 
+  labs(x = "Year", y = "Relative Abundance Function") +
+  scale_x_continuous(breaks = seq(1975, 2016, by = 10)) +
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust = 0.5, size=18),
+    axis.title.y = element_text(size=25 ),
+    axis.text = element_text(size = 11, face="bold"),
+    axis.title.x = element_text(size=30 ))
+
+ggsave("plots/All_Subgroups.pdf", width = 12, height = 8)
+
+
 ######################################################################################
 ############################# Stage 3: Rejoining ################################
 ######################################################################################
 
-# Add a unique label for each initial cluster (e.g., "Forest Birds 1")
-final_clusters <- final_clusters |> 
-  mutate(Subcluster = paste(Guild, Cluster))
 
 # Create cluster list structure
-clusters_list <- final_clusters |> 
+subclusters <- final_clusters |> 
   pull("Subcluster") |> 
   unique() |> 
+  sort()
+
+clusters_list <- subclusters |> 
   purrr::map(\(sc){
     list(species = final_clusters |> filter(Subcluster == sc),
          lineage = sc)
@@ -627,8 +662,6 @@ midpoints <- dendro_data$segments %>%
 
 # Merge with label data
 merge_labels_df <- left_join(merge_labels_df, midpoints, by = "y")
-
-merge_labels_df
 
 label_offset <- max(dendro_data$segments$yend) * 0.11
 
