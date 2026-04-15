@@ -658,7 +658,7 @@ dendro_plot <- ggplot(segment(dendro_data)) +
 geom_hline(yintercept = 2.555, colour = "blue", linetype = "dashed", linewidth = 1) +
 geom_hline(yintercept = 3.14, colour = "orange", linetype = "dashed", linewidth = 1)
 
-print(dendro_plot)
+ggsave("plots/Dend.pdf", width = 12, height = 8)
 
 ###################################################################################
 #########################################Species Level Plots#######################
