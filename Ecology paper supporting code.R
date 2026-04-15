@@ -325,7 +325,7 @@ subdivide1 |>
   plot_annotation(title = "Average Silhouette Score Computed for k = {2,...,10} Clusters Over Each Guild"
 )
 
-ggsave("plots/Elbow.pdf", width = 12, height =8)
+  ggsave("plots/Elbow.pdf", width = 12, height =8)
 
 # Extract data on clusters for all guilds
 initial_clusters <- subdivide1 |> 
@@ -349,7 +349,6 @@ initial_clusters |>
     "Trumpeter Swan"     = "firebrick",
     "Wandering Tattler"  = "purple"
   )) +
-  scale_y_continuous(limits = c(-0.75, 0.45)) +
   labs(
     x = "Year",
     y = "Reconstructed Abundance Function"
@@ -363,7 +362,9 @@ initial_clusters |>
     plot.title = element_text(size = 28, face = "bold", hjust = 0.5)
   )
 
-# Repeat clustering excluding outliers and singletons
+ggsave("plots/Removed_Out.pdf", width = 12, height = 8)
+
+  # Repeat clustering excluding outliers and singletons
 subdivide2 <- fpca_output |> 
   left_join(initial_clusters |> select(Species, Singleton, Outlier), by = c("Species")) |> 
   filter(!is.na(Guild),
