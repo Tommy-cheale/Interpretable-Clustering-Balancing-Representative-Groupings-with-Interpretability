@@ -449,33 +449,21 @@ final_clusters |>
 ############################# Stage 3: Rejoining ################################
 ######################################################################################
 
-# --- PREPARATION: Build the initial clusters as leaves ---
-all_clusters
-
 # Add a unique label for each initial cluster (e.g., "Forest Birds 1")
-all_clusters$Subcluster <- paste(all_clusters$Original_Group, all_clusters$Cluster, sep = " ")
+final_clusters <- final_clusters |> 
+  mutate(Subcluster = paste(Guild, Cluster))
 
-unique(all_clusters$Subcluster)
-
-initial_clusters <- split(all_clusters, all_clusters$Subcluster)
-initial_clusters
-
-tag_cols <- c("Duck Species", "Goose Species",
-              "Forest Crop Specilists", "Forest birds wintering in SA",
-              "Forest birds wintering in CA", "Short distance shorebirds",
-              "Long distance shorebirds", "Tolerant to Farming", "Dependent on Grassland")
+initial_clusters <- split(final_clusters, final_clusters$Subcluster)
 
 clusters_list <- list()
+
 for (cl in names(initial_clusters)) {
   df <- initial_clusters[[cl]]
   clusters_list[[cl]] <- list(
     species = df,
-    lineage = cl,
-    tag_counts = colSums(df[, tag_cols, drop = FALSE])
+    lineage = cl
   )
 }
-
-length(clusters_list)
 
 m <- length(clusters_list)
 cluster_indices <- setNames(-seq_len(m), names(clusters_list))
@@ -486,10 +474,8 @@ merge_heights <- c()
 merge_steps <- list()
 scatter_plots <- list()
 PC_points<-list()
-tag_counts_history <- list()  # to track tag counts per iteration
 
 iteration <- 0
-
 
 # Main hierarchical merging loop
 while (length(clusters_list) > 1) {
@@ -523,21 +509,12 @@ while (length(clusters_list) > 1) {
   
   new_species <- rbind(clusters_list[[name1]]$species, clusters_list[[name2]]$species)
   new_lineage <- paste(clusters_list[[name1]]$lineage, clusters_list[[name2]]$lineage, sep = " + ")
-  new_tag_counts <- colSums(new_species[, tag_cols, drop = FALSE])
-  
+
   new_cluster_name <- new_lineage
   new_cluster <- list(
     species = new_species,
-    lineage = new_lineage,
-    tag_counts = new_tag_counts
+    lineage = new_lineage
   )
-  
-  tag_counts_history[[iteration]] <- data.frame(
-    Iteration = iteration,
-    Cluster = new_cluster_name,
-    t(as.data.frame(new_tag_counts))  # transpose to make tags as columns
-  )
-  
   
   # Register merge indices for dendrogram reconstruction
   idx1 <- cluster_indices[name1]
@@ -552,9 +529,7 @@ while (length(clusters_list) > 1) {
   merge_steps[[iteration]] <- list(
     merged = c(name1, name2),
     new_lineage = new_lineage,
-    distance = merge_distance,
-    tag_counts = new_tag_counts
-  )
+    distance = merge_distance)
   
   # Remove old clusters and add the new merged one
   clusters_list[[name1]] <- NULL
@@ -618,7 +593,9 @@ while (length(clusters_list) > 1) {
   
 }
 
+# Construct hclust obj to make use of existing functions for visualizing clusters
 n_orig <- length(initial_clusters)
+
 hclust_obj <- list(
   merge = merge_matrix,
   height = merge_heights,
@@ -626,9 +603,12 @@ hclust_obj <- list(
   labels = names(initial_clusters),
   method = "complete-linkage",
   call = match.call()
-)
+) |> 
+  structure(class = "hclust")
+
 class(hclust_obj) <- "hclust"
 
+# Construct dendrogram
 dendro_data <- dendro_data(hclust_obj)
 
 merge_yvals <- unique(dendro_data$segments$yend)
@@ -678,12 +658,7 @@ dendro_plot <- ggplot(segment(dendro_data)) +
 geom_hline(yintercept = 2.555, colour = "blue", linetype = "dashed", linewidth = 1) +
 geom_hline(yintercept = 3.14, colour = "orange", linetype = "dashed", linewidth = 1)
 
-
 print(dendro_plot)
-tag_counts_history <- do.call(rbind, tag_counts_history)
-
-#Write to file if you want
-#write.csv(tag_counts_history, "Merge_Tags.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 ###################################################################################
 #########################################Species Level Plots#######################
