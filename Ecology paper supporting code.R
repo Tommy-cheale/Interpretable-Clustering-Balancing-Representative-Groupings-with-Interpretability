@@ -60,6 +60,9 @@ SOCB_2019 <- SOCB_2019 %>%
   filter(Complete) %>%
   select(-Complete)
 
+SOCB_2019_habitat <- SOCB_2019_habitat |> 
+  filter(! (Species %in% pull(removed_species, "Species")))
+
 # Identify species with only Other habitat tag or No habitat tags
 removed_species <- SOCB_2019_habitat |> 
   filter(Guild %in% c("Other","None")) |> 
@@ -67,6 +70,13 @@ removed_species <- SOCB_2019_habitat |>
          Description = ifelse(Guild == "Other", "Tagged as other", "No guild tag")) |> 
   select(-Guild) |> 
   bind_rows(removed_species)
+
+# Remove species with only Other habitat tag or No habitat tags
+SOCB_2019  <- SOCB_2019 |> 
+  filter(! (Species %in% pull(removed_species, "Species")))
+
+SOCB_2019_habitat <- SOCB_2019_habitat |> 
+  filter(! (Species %in% pull(removed_species, "Species")))
 
 # Compute max-rescaled indices
 SOCB_2019 <- SOCB_2019 %>%
@@ -208,6 +218,15 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
                       PC2 = fpca_result$scores[,2],
                       Cos2 = Cos2_scores) |> 
   left_join(SOCB_2019_habitat, by = "Species")
+
+# Identify species with low cos2 scores
+removed_species <- fpca_output |> 
+  filter(Cos2 < .75) |> 
+  select(Species, Cos2) |> 
+  mutate(Reason = "Cos2",
+         Description = paste("Cos2 score is",Cos2)) |> 
+  select(-Cos2) |> 
+  bind_rows(removed_species)
 
 # Compute reconstructed trajectories based on first 2 PCs
 harmonics <- fda::eval.fd(time_points, fpca_result$harmonics)
