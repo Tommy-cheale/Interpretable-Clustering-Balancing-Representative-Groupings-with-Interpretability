@@ -364,10 +364,12 @@ initial_clusters |>
 
 ggsave("plots/Removed_Out.pdf", width = 12, height = 8)
 
-  # Repeat clustering excluding outliers and singletons
+# Repeat clustering excluding outliers and singletons
 subdivide2 <- fpca_output |> 
   left_join(initial_clusters |> select(Species, Singleton, Outlier), by = c("Species")) |> 
   filter(!is.na(Guild),
+         !Singleton,
+         !Outlier,
          Cos2 > .75) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
