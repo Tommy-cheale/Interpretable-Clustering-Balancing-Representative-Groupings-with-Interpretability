@@ -207,10 +207,10 @@ ggsave("plots/Scree.pdf", width = 12, height = 8)
 Total_var<- fpca_result$scores^2 %*% fpca_result$values |> 
   as.vector()
 
-Partial_var<- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2] |> 
+Explained_var<- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2] |> 
   as.vector()
 
-Cos2_scores <- Partial_var/Total_var
+Cos2_scores <- Explained_var/Total_var
 
 # Construct output data frame
 fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
@@ -221,7 +221,7 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
 
 # Identify species with low cos2 scores
 removed_species <- fpca_output |> 
-  filter(Cos2 < .75) |> 
+  filter(Cos2 < .80) |> 
   select(Species, Cos2) |> 
   mutate(Reason = "Cos2",
          Description = paste("Cos2 score is",Cos2)) |> 
@@ -261,7 +261,7 @@ mahal_dist <- function(M){
 
 subdivide1 <- fpca_output |> 
   filter(! (Guild %in% c("Other","None")),
-         Cos2 > .75) |> 
+         Cos2 > .80) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
@@ -373,7 +373,7 @@ subdivide2 <- fpca_output |>
   filter(!is.na(Guild),
          !Singleton,
          !Outlier,
-         Cos2 > .75) |> 
+         Cos2 > .80) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
