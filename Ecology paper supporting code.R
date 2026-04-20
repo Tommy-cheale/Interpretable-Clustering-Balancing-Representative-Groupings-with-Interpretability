@@ -489,7 +489,6 @@ ggsave("plots/All_Subgroups.pdf", width = 12, height = 8)
 ############################# Stage 3: Rejoining ################################
 ######################################################################################
 
-
 # Create cluster list structure
 subclusters <- final_clusters |> 
   pull("Subcluster") |> 
@@ -498,7 +497,7 @@ subclusters <- final_clusters |>
 
 clusters_list <- subclusters |> 
   purrr::map(\(sc){
-    list(species = final_clusters |> filter(Subcluster == sc),
+    list(species = final_clusters |> filter(Subcluster == sc) |> add_column(Merge = 0),
          lineage = sc)
   }) |> 
   structure(names = subclusters)
@@ -573,10 +572,10 @@ while (length(clusters_list) > 1) {
   clusters_list[[name2]] <- NULL
   clusters_list[[new_cluster_name]] <- new_cluster
   
+  clusters_list[[new_cluster_name]]$species$Merge <- iteration
+  
   cluster_indices <- cluster_indices[!names(cluster_indices) %in% c(name1, name2)]
   cluster_indices[new_cluster_name] <- new_index
-  
-  
   
   current_species <- do.call(rbind, lapply(clusters_list, function(cl) cl$species))
   current_species$CurrentCluster <- rep(names(clusters_list), sapply(clusters_list, function(cl) nrow(cl$species)))
