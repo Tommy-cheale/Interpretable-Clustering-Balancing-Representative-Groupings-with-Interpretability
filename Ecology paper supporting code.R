@@ -246,8 +246,11 @@ fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + fpca_mean) |>
 ################################################################################################
 
 mahal_dist <- function(M){
-  if(nrow(M) < 3){
-    return(rep(NA,nrow(M)))
+  if(nrow(M) == 1){
+    return(NA)
+  }
+  if(nrow(M) == 2){
+    return(c(0,0))
   }
   else{
     m <- colMeans(M)
