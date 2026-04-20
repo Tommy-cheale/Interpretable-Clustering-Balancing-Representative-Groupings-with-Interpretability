@@ -508,7 +508,6 @@ next_index <- 1
 
 merge_matrix <- NULL
 merge_heights <- c()
-catter_plots <- list()
 PC_points<-list()
 
 iteration <- 0
@@ -586,42 +585,6 @@ while (length(clusters_list) > 1) {
       CurrentCluster = nm
     )
   }))
-  
-  
-  
-  # Scatter plot with correct coloring
-  p_scatter <- ggplot() +
-    # Plot individual points
-    geom_point(data = current_species, aes(x = PC1, y = PC2, color = factor(CurrentCluster)), size = 2, alpha = 0.7) +
-    # Plot centroids as squares in the same color
-    geom_point(data = centroids, aes(x = PC1, y = PC2, color = factor(CurrentCluster)), shape = 15, size = 5) +
-    # Ensure consistent colors
-    
-    scale_color_manual(values = rainbow(length(unique(current_species$CurrentCluster)))) +
-    
-    # Wrap legend labels to prevent long labels from cutting off
-    guides(color = guide_legend(override.aes = list(size = 4), title = "Cluster (Lineage)")) +
-    theme_minimal() +
-    labs(
-      title = paste("Merge", iteration),
-      subtitle = paste("Merge distance:", round(merge_distance, 2)),
-      color = "Cluster (Lineage)",
-    ) +
-    theme(
-      legend.text = element_text(size = 14),
-      legend.title = element_text(size = 14),
-      axis.title.x = element_text(size=18, face="bold"),
-      axis.title.y = element_text(size=18, face="bold"),
-      legend.box = "vertical"     # spacing between items
-      
-      
-      
-    )+
-    scale_color_discrete(labels = function(x) str_wrap(x, width = 20))
-  # Wrap legend labels at ~20 characters
-  
-  scatter_plots[[iteration]] <- p_scatter
-  
 }
 
 # Construct hclust obj to make use of existing functions for visualizing clusters
