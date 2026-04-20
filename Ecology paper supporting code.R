@@ -222,7 +222,7 @@ fpca_mean <- fda::eval.fd(time_points, fpca_result$meanfd) |>
   as.vector()
 
 fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + fpca_mean) |> 
-  as_tibble() |> 
+  as_tibble(.name_repair = "minimal") |> 
   set_names(1975:2016) |> 
   add_column(Species = SOCB_2019_habitat |> pull("Species"), .before = 1) |> 
   pivot_longer(-Species, names_to = "year", values_to = "fit") |> 
