@@ -506,10 +506,7 @@ clusters_list <- subclusters |>
 cluster_indices <- setNames(-seq_len(length(clusters_list)), names(clusters_list))
 next_index <- 1
 
-merge_matrix <- NULL
-merge_heights <- c()
 PC_points<-list()
-
 iteration <- 0
 
 # Main hierarchical merging loop
@@ -558,8 +555,18 @@ while (length(clusters_list) > 1) {
   new_index <- next_index
   next_index <- next_index + 1
   
-  merge_matrix <- rbind(merge_matrix, c(pair_indices[1], pair_indices[2]))
-  merge_heights <- c(merge_heights, merge_distance)
+  if(iteration == 1)
+    merge_df <- tibble(Merge = 1,
+                       Cluster1 = pair_indices[1],
+                       Cluster2 = pair_indices[2],
+                       Height = merge_distance)
+  else
+    merge_df <- tibble(Merge = iteration,
+                       Cluster1 = pair_indices[1],
+                       Cluster2 = pair_indices[2],
+                       Height = merge_distance) |> 
+    bind_rows(merge_df) |> 
+    arrange(Merge)
   
   # Remove old clusters and add the new merged one
   clusters_list[[name1]] <- NULL
@@ -581,16 +588,14 @@ while (length(clusters_list) > 1) {
 n_orig <- length(subclusters)
 
 hclust_obj <- list(
-  merge = merge_matrix,
-  height = merge_heights,
+  merge = merge_df |> select(Cluster1, Cluster2) |> as.matrix(),
+  height = merge_df |> pull(Height),
   order = 1:n_orig,
   labels = subclusters,
   method = "complete-linkage",
   call = match.call()
 ) |> 
   structure(class = "hclust")
-
-class(hclust_obj) <- "hclust"
 
 # Construct dendrogram
 dendro_data <- dendro_data(hclust_obj)
