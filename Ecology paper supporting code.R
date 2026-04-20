@@ -328,7 +328,7 @@ subdivide1 |>
   plot_annotation(title = "Average Silhouette Score Computed for k = {2,...,10} Clusters Over Each Guild"
 )
 
-  ggsave("plots/Elbow.pdf", width = 12, height =8)
+ggsave("plots/Elbow.pdf", width = 12, height =8)
 
 # Extract data on clusters for all guilds
 initial_clusters <- subdivide1 |> 
