@@ -17,24 +17,24 @@ library(tidyverse)
 ###############################################################################
 
 # Load data from 2019 SOCBR
-SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv") %>%
-  select(Species = English_Name, year, index) %>%
+SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv") |>
+  select(Species = English_Name, year, index) |>
   arrange(Species, year)
 
 # Load Guild data
 SOCB_2019_habitat <- read_csv("SOCB_2019_habitat_guilds.csv")
 
 # Filter to after 1974
-SOCB_2019 <- SOCB_2019 %>%
+SOCB_2019 <- SOCB_2019 |>
   filter(year >= 1975)
 
 # Identify species with incomplete data
-SOCB_2019 <- SOCB_2019 %>%
-  group_by(Species) %>%
-  mutate(Complete = all(1975:2016 %in% year)) %>%
+SOCB_2019 <- SOCB_2019 |>
+  group_by(Species) |>
+  mutate(Complete = all(1975:2016 %in% year)) |>
   ungroup()
 
-removed_species <- SOCB_2019 %>% 
+removed_species <- SOCB_2019 |> 
   filter(!Complete) |> 
   group_by(Species) |> 
   summarize(Start = min(year)) |> 
@@ -43,8 +43,8 @@ removed_species <- SOCB_2019 %>%
   select(-Start)    
   
 # Remove species with incomplete data
-SOCB_2019 <- SOCB_2019 %>%
-  filter(Complete) %>%
+SOCB_2019 <- SOCB_2019 |>
+  filter(Complete) |>
   select(-Complete)
 
 SOCB_2019_habitat <- SOCB_2019_habitat |> 
@@ -66,8 +66,8 @@ SOCB_2019_habitat <- SOCB_2019_habitat |>
   filter(! (Species %in% pull(removed_species, "Species")))
 
 # Compute max-rescaled indices
-SOCB_2019 <- SOCB_2019 %>%
-  group_by(Species) %>%
+SOCB_2019 <- SOCB_2019 |>
+  group_by(Species) |>
   mutate(mr_index = index / max(index)) |> 
   ungroup()
 
@@ -405,9 +405,9 @@ final_clusters <- subdivide2 |>
 final_clusters |> 
   ggplot(aes(x = PC1, y = PC2, color = factor(Cluster))) +
   geom_point(size=2.5, alpha = 0.6) +
-  geom_point(data = initial_clusters %>% filter(Singleton | Outlier),
+  geom_point(data = initial_clusters |> filter(Singleton | Outlier),
              color = "red", shape = 17, size = 4, show.legend = FALSE) +
-  geom_text(data = initial_clusters %>% filter(Singleton | Outlier),
+  geom_text(data = initial_clusters |> filter(Singleton | Outlier),
             aes(label = Species), color = "red", vjust = -1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
   facet_wrap(~ Guild) +
   theme_minimal() +
@@ -609,9 +609,9 @@ merge_labels_df <- data.frame(
 )
 
 # For x positions, estimate midpoint of each merge from the dendro segments
-midpoints <- dendro_data$segments %>%
-  filter(y == yend & y > 0) %>% # horizontal lines at merge points
-  group_by(y) %>%
+midpoints <- dendro_data$segments |>
+  filter(y == yend & y > 0) |> # horizontal lines at merge points
+  group_by(y) |>
   summarize(x = mean(c(x, xend)), .groups = "drop")  # midpoint x of each horizontal merge line
 
 # Merge with label data
