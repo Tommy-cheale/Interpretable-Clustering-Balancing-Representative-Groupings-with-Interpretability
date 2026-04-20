@@ -575,16 +575,6 @@ while (length(clusters_list) > 1) {
   current_species$CurrentCluster <- rep(names(clusters_list), sapply(clusters_list, function(cl) nrow(cl$species)))
   
   PC_points[[iteration]]<-current_species
-  
-  
-  centroids <- do.call(rbind, lapply(names(clusters_list), function(nm) {
-    cl <- clusters_list[[nm]]
-    data.frame(
-      PC1 = mean(cl$species$PC1),
-      PC2 = mean(cl$species$PC2),
-      CurrentCluster = nm
-    )
-  }))
 }
 
 # Construct hclust obj to make use of existing functions for visualizing clusters
