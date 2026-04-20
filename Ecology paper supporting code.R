@@ -458,12 +458,12 @@ final_clusters <- final_clusters |>
 fpca_means <- final_clusters |> 
   group_by(Guild, Cluster, Subcluster) |> 
   summarize(PC1 = mean(PC1),
-            PC2 = mean(PC2)) |> 
+            PC2 = mean(PC2),
+            .groups = "keep") |> 
   reframe(year = 1975:2016,
-          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + mean)
+          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
 
 # Plot original trajectories by subcluster
-my_label <- function
 final_clusters |> 
   filter(!(Singleton | Outlier)) |> 
   select(Species, Guild, Cluster, Subcluster) |> 
