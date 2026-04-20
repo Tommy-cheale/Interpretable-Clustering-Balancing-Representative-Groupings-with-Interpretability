@@ -696,14 +696,48 @@ geom_hline(yintercept = 3.14, colour = "orange", linetype = "dashed", linewidth 
 
 ggsave("plots/Dend.pdf", width = 12, height = 8)
 
-# Plot trajectories in rejoined clusters at a given iteration
-iter <- 19
+# Plot results for the 3-cluster solution
 
-rejoined_means <- PC_points[[iter]] |> 
+
+iteration <- 20 
+clusters <- 3
+
+#iteration <- 15 # 8-cluster solution
+#clusters <- 8
+
+centroids <- PC_points[[iteration]] |> 
   group_by(CurrentCluster) |> 
-  summarize(PC1 = mean(PC1),
-            PC2 = mean(PC2),
-            .groups = "keep") |> 
+  summarize(PC1 = mean(PC1),PC2 = mean(PC2))
+            
+PC_points[[iteration]] |> 
+  ggplot(aes(x = PC1, y = PC2, color = factor(CurrentCluster))) +
+  # Plot individual points
+  geom_point(size = 2, alpha = 0.7) +
+  # Plot centroids as squares in the same color
+  geom_point(data = centroids, shape = 15, size = 5) +
+  # Ensure consistent colors
+  scale_color_manual(values = rainbow(length(unique(current_species$CurrentCluster)))) +
+  # Wrap legend labels to prevent long labels from cutting off
+  guides(color = guide_legend(override.aes = list(size = 4), title = "Cluster (Lineage)")) +
+  theme_minimal() +
+  labs(
+    title = paste("Merge", iteration),
+    subtitle = paste("Merge distance:", round(merge_distance, 2)),
+    color = "Cluster (Lineage)",
+  ) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    axis.title.x = element_text(size=18, face="bold"),
+    axis.title.y = element_text(size=18, face="bold"),
+    legend.box = "vertical"     # spacing between items
+  )+
+  scale_color_discrete(labels = function(x) str_wrap(x, width = 20))
+
+ggsave(paste0("plots/",clusters,"_cluster_scatter.pdf"), width = 12, height = 6)
+
+rejoined_means <- centroids |> 
+  group_by(CurrentCluster) |> 
   reframe(year = 1975:2016,
           Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
   
@@ -716,7 +750,7 @@ group_colors <- c("Wetland Birds" = "#1f77b4",
                   "Grassland Birds" = "#e377c2",
                   "Aerial Insectivores" = "#7f7f7f")
 
-PC_points[[iter]] |> 
+PC_points[[iteration]] |> 
   right_join(SOCB_2019, by = "Species") |> 
   filter(!is.na(CurrentCluster)) |> 
   ggplot(aes(x = year, y = mr_index)) +
@@ -732,6 +766,8 @@ PC_points[[iter]] |>
         legend.text = element_text(size = 22),
         legend.position = "bottom",
         legend.title=element_blank())
+
+ggsave(paste0("plots/",clusters,"_cluster_line.pdf"), width = 12, height = 6)
 
 
 # SJB 170426
