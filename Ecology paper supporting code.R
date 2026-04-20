@@ -24,6 +24,7 @@ library(mclust)
 library(ggdendro)
 library(MASS)
 library(gridExtra)
+library(ggh4x)
 
 ###############################################################################
 ################################ Data Processing ##############################
@@ -464,6 +465,16 @@ fpca_means <- final_clusters |>
           Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
 
 # Plot original trajectories by subcluster
+layout <- list(c(1, 2, 3, NA),
+               c(4, 5, NA, NA),
+               c(6, 7, 8, NA),
+               c(9, 10, NA, NA),
+               c(11, 12, NA, NA),
+               13:16,
+               17:20,
+               21:24) |> 
+  do.call(what = "rbind")
+
 final_clusters |> 
   filter(!(Singleton | Outlier)) |> 
   select(Species, Guild, Cluster, Subcluster) |> 
@@ -472,12 +483,12 @@ final_clusters |>
   geom_line(aes(group = Species), color = "orange", linewidth = 0.4) +
   geom_line(data = fpca_means, aes(x = year, y = Mean),
             color = "darkblue", linewidth = 1.5) +
-  facet_grid(Guild ~ Cluster) + 
+  facet_manual(~Subcluster, design = layout) +
   labs(x = "Year", y = "Relative Abundance Function") +
   scale_x_continuous(breaks = seq(1975, 2016, by = 10)) +
   theme_minimal()+
   theme(
-    plot.title = element_text(hjust = 0.5, size=18),
+    strip.text = element_text(size=10, face = "bold"),
     axis.title.y = element_text(size=25 ),
     axis.text = element_text(size = 11, face="bold"),
     axis.title.x = element_text(size=30 ))
@@ -486,7 +497,7 @@ ggsave("plots/All_Subgroups.pdf", width = 12, height = 8)
 
 
 ######################################################################################
-############################# Stage 3: Rejoining ################################
+############################# Stage 3: Rejoining #####################################
 ######################################################################################
 
 # Create cluster list structure
