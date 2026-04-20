@@ -646,85 +646,85 @@ ggsave("plots/Dend.pdf", width = 12, height = 8)
 
 # Plot results for the 3-cluster or 8-cluster solution
 
-# clusters <- 3 # Select one
-clusters <- 8
+for(clusters in c(3,8)){
 
-merge <- 24 - clusters
-
-centroids <- PC_points[[merge]] |> 
-  group_by(CurrentCluster, Merge) |> 
-  summarize(PC1 = mean(PC1),PC2 = mean(PC2)) |> 
-  mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster)))
-            
-PC_points[[merge]] |> 
-  mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster))) |> 
-  ggplot(aes(x = PC1, y = PC2, color = factor(label))) +
-  # Plot individual points
-  geom_vline(xintercept = 0) + 
-  geom_hline(yintercept = 0) +
-  geom_point(size = 2, alpha = 0.7) +
-  geom_point(data = PC_points[[merge]] |> filter(Species == "Franklin's Gull"), color = "red", shape = 17, size = 4) + 
-  geom_text(data = PC_points[[merge]] |> filter(Species == "Franklin's Gull"),
-            aes(label = Species), color = "red", vjust = 2.05, hjust = 0.5, size = 4.75, , show.legend = FALSE) +
-  # Plot centroids as squares in the same color
-  geom_point(data = centroids, shape = 15, size = 5) +
-  # Ensure consistent colors
-  scale_color_manual(values = rainbow(length(unique(current_species$CurrentCluster)))) +
-  # Wrap legend labels to prevent long labels from cutting off
-  guides(color = guide_legend(override.aes = list(size = 4), title = "Cluster (Lineage)")) +
-  xlim(c(-3,3)) + 
-  ylim(c(-3,3)) + 
-  theme_minimal() +
-  labs(
-    title = paste("Merge", merge),
-    subtitle = paste("Merge distance:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
-    color = "Cluster (Lineage)",
-  ) +
-  theme(
-    legend.text = element_text(size = 14),
-    legend.title = element_text(size = 14),
-    axis.title.x = element_text(size=18, face="bold"),
-    axis.title.y = element_text(size=18, face="bold"),
-    legend.box = "vertical"     # spacing between items
-  )+
-  scale_color_discrete(labels = function(x) str_wrap(x, width = 20))
-
-ggsave(paste0("plots/",clusters,"_cluster_scatter.pdf"), width = 12, height = 6)
-
-rejoined_means <- centroids |> 
-  group_by(CurrentCluster, Merge) |> 
-  reframe(year = 1975:2016,
-          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean) |> 
-  mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge)))
+  merge <- 24 - clusters
   
-group_colors <- c("Wetland Birds" = "#1f77b4",
-                  "Shorebirds" = "#ff7f0e",
-                  "Birds of Prey" = "#2ca02c",
-                  "Seabirds" = "#d62728",
-                  "Waterfowl" = "#9467bd",
-                  "Forest Birds" = "#8c564b",
-                  "Grassland Birds" = "#e377c2",
-                  "Aerial Insectivores" = "#7f7f7f")
-
-join_data <- PC_points[[merge]] |> 
-  right_join(SOCB_2019, by = "Species") |> 
-  filter(!is.na(CurrentCluster)) |> 
-  mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ", Merge)))
-
-join_data |> 
-  ggplot(aes(x = year, y = mr_index)) +
-  geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
-  geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
-  scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
-  facet_wrap(vars(label), ncol = 3) +
-  labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
-  theme_minimal() +
-  theme(strip.text = element_text(size=25, face = "bold"),
-        axis.title.y = element_text(size = 30, face = "bold"),
-        axis.title.x = element_text(size = 30, face = "bold"),
-        legend.text = element_text(size = 22),
-        legend.position = "bottom",
-        legend.title=element_blank()) +
-  geom_line(data = join_data |> filter(Species == "Franklin's Gull"), colour ="red", lty = 2, linewidth = 1.5)
-
-ggsave(paste0("plots/",clusters,"_cluster_line.pdf"), width = 12, height = 6 + 6 * (clusters == 8))
+  centroids <- PC_points[[merge]] |> 
+    group_by(CurrentCluster, Merge) |> 
+    summarize(PC1 = mean(PC1),PC2 = mean(PC2)) |> 
+    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster)))
+  
+  PC_points[[merge]] |> 
+    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster))) |> 
+    ggplot(aes(x = PC1, y = PC2, color = factor(label))) +
+    # Plot individual points
+    geom_vline(xintercept = 0) + 
+    geom_hline(yintercept = 0) +
+    geom_point(size = 2, alpha = 0.7) +
+    geom_point(data = PC_points[[merge]] |> filter(Species == "Franklin's Gull"), color = "red", shape = 17, size = 4) + 
+    geom_text(data = PC_points[[merge]] |> filter(Species == "Franklin's Gull"),
+              aes(label = Species), color = "red", vjust = 2.05, hjust = 0.5, size = 4.75, , show.legend = FALSE) +
+    # Plot centroids as squares in the same color
+    geom_point(data = centroids, shape = 15, size = 5) +
+    # Ensure consistent colors
+    scale_color_manual(values = rainbow(length(unique(current_species$CurrentCluster)))) +
+    # Wrap legend labels to prevent long labels from cutting off
+    guides(color = guide_legend(override.aes = list(size = 4), title = "Cluster (Lineage)")) +
+    xlim(c(-3,3)) + 
+    ylim(c(-3,3)) + 
+    theme_minimal() +
+    labs(
+      title = paste("Merge", merge),
+      subtitle = paste("Merge distance:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
+      color = "Cluster (Lineage)",
+    ) +
+    theme(
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 14),
+      axis.title.x = element_text(size=18, face="bold"),
+      axis.title.y = element_text(size=18, face="bold"),
+      legend.box = "vertical"     # spacing between items
+    )+
+    scale_color_discrete(labels = function(x) str_wrap(x, width = 20))
+  
+  ggsave(paste0("plots/",clusters,"_cluster_scatter.pdf"), width = 12, height = 6)
+  
+  rejoined_means <- centroids |> 
+    group_by(CurrentCluster, Merge) |> 
+    reframe(year = 1975:2016,
+            Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean) |> 
+    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge)))
+  
+  group_colors <- c("Wetland Birds" = "#1f77b4",
+                    "Shorebirds" = "#ff7f0e",
+                    "Birds of Prey" = "#2ca02c",
+                    "Seabirds" = "#d62728",
+                    "Waterfowl" = "#9467bd",
+                    "Forest Birds" = "#8c564b",
+                    "Grassland Birds" = "#e377c2",
+                    "Aerial Insectivores" = "#7f7f7f")
+  
+  join_data <- PC_points[[merge]] |> 
+    right_join(SOCB_2019, by = "Species") |> 
+    filter(!is.na(CurrentCluster)) |> 
+    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ", Merge)))
+  
+  join_data |> 
+    ggplot(aes(x = year, y = mr_index)) +
+    geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
+    geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
+    scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
+    facet_wrap(vars(label), ncol = 3) +
+    labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
+    theme_minimal() +
+    theme(strip.text = element_text(size=25, face = "bold"),
+          axis.title.y = element_text(size = 30, face = "bold"),
+          axis.title.x = element_text(size = 30, face = "bold"),
+          legend.text = element_text(size = 22),
+          legend.position = "bottom",
+          legend.title=element_blank()) +
+    geom_line(data = join_data |> filter(Species == "Franklin's Gull"), colour ="red", lty = 2, linewidth = 1.5)
+  
+  ggsave(paste0("plots/",clusters,"_cluster_line.pdf"), width = 12, height = 6 + 6 * (clusters == 8))
+}
