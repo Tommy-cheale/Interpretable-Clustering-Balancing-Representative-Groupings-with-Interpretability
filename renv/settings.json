@@ -1,7 +1,9 @@
 {
   "bioconductor.version": null,
   "external.libraries": [],
-  "ignored.packages": [],
+  "ignored.packages": [
+    "NCmisc"
+  ],
   "package.dependency.fields": [
     "Imports",
     "Depends",
