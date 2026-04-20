@@ -231,10 +231,10 @@ removed_species <- fpca_output |>
 # Compute reconstructed trajectories based on first 2 PCs
 harmonics <- fda::eval.fd(time_points, fpca_result$harmonics)
 
-mean <- fda::eval.fd(time_points, fpca_result$meanfd) |> 
+fpca_mean <- fda::eval.fd(time_points, fpca_result$meanfd) |> 
   as.vector()
 
-fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + mean) |> 
+fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + fpca_mean) |> 
   as_tibble() |> 
   set_names(1975:2016) |> 
   add_column(Species = SOCB_2019_habitat |> pull("Species"), .before = 1) |> 
@@ -668,6 +668,7 @@ merge_labels_df <- left_join(merge_labels_df, midpoints, by = "y")
 
 label_offset <- max(dendro_data$segments$yend) * 0.11
 
+# Construct dendrogram
 ggplot(segment(dendro_data)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_text(data = label(dendro_data),
@@ -691,6 +692,47 @@ geom_hline(yintercept = 2.555, colour = "blue", linetype = "dashed", linewidth =
 geom_hline(yintercept = 3.14, colour = "orange", linetype = "dashed", linewidth = 1)
 
 ggsave("plots/Dend.pdf", width = 12, height = 8)
+
+# Plot trajectories in rejoined clusters at a given iteration
+iter <- 19
+
+rejoined_means <- PC_points[[iter]] |> 
+  group_by(CurrentCluster) |> 
+  summarize(PC1 = mean(PC1),
+            PC2 = mean(PC2),
+            .groups = "keep") |> 
+  reframe(year = 1975:2016,
+          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
+  
+group_colors <- c("Wetland Birds" = "#1f77b4",
+                  "Shorebirds" = "#ff7f0e",
+                  "Birds of Prey" = "#2ca02c",
+                  "Seabirds" = "#d62728",
+                  "Waterfowl" = "#9467bd",
+                  "Forest Birds" = "#8c564b",
+                  "Grassland Birds" = "#e377c2",
+                  "Aerial Insectivores" = "#7f7f7f")
+
+PC_points[[iter]] |> 
+  right_join(SOCB_2019, by = "Species") |> 
+  filter(!is.na(CurrentCluster)) |> 
+  ggplot(aes(x = year, y = mr_index)) +
+  geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
+  geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
+  scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
+  facet_wrap(vars(CurrentCluster), ncol = 3) +
+  labs(x = "Year", y = "Rescaled Annual Abundance", color = "Original Group") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 25, face = "bold"),
+        axis.title.y = element_text(size = 30, face = "bold"),
+        axis.title.x = element_text(size = 30, face = "bold"),
+        legend.text = element_text(size = 22),
+        legend.position = "bottom",
+        legend.title=element_blank())
+
+
+# SJB 170426
+
 
 
 main_time_ser <- function(Main_data, Iter) {
