@@ -5,26 +5,12 @@
 # If you have any questions regarding this code, please contact Tommy Cheale at Tommycheale@gmail.com
 
 # Load in required packages
-library(tidyverse)
-library(fda)
-library(cluster)     
-library(factoextra)  
-library(dendextend)  
-library(geometry)    
-library(plotly)      
-library(patchwork)
 library(cluster)
-library(NbClust)
-library(grid)
-library(gridBase)
-library(ggrepel)
-library(reshape2)
-library(FactoMineR)
-library(mclust)
+library(fda)
 library(ggdendro)
-library(MASS)
-library(gridExtra)
 library(ggh4x)
+library(patchwork)
+library(tidyverse)
 
 ###############################################################################
 ################################ Data Processing ##############################
