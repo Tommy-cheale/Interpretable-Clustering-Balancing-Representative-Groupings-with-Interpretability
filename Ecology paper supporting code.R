@@ -508,8 +508,7 @@ next_index <- 1
 
 merge_matrix <- NULL
 merge_heights <- c()
-merge_steps <- list()
-scatter_plots <- list()
+catter_plots <- list()
 PC_points<-list()
 
 iteration <- 0
@@ -562,11 +561,6 @@ while (length(clusters_list) > 1) {
   
   merge_matrix <- rbind(merge_matrix, c(pair_indices[1], pair_indices[2]))
   merge_heights <- c(merge_heights, merge_distance)
-  
-  merge_steps[[iteration]] <- list(
-    merged = c(name1, name2),
-    new_lineage = new_lineage,
-    distance = merge_distance)
   
   # Remove old clusters and add the new merged one
   clusters_list[[name1]] <- NULL
