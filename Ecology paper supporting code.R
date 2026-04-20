@@ -104,7 +104,7 @@ SOCB_2019 |>
     data = SOCB_2019_mean_guild |> filter(Guild %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))),
     aes(x = year, y = mr_mean, color = Guild),
     inherit.aes = FALSE,
-    size = 1.5
+    linewidth = 1.5
   ) +
   scale_color_manual(values = c(
     "Shorebirds" = "#ff7f0e",
