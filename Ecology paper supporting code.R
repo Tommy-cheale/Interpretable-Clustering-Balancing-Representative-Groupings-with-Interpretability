@@ -136,7 +136,7 @@ ggsave("plots/Examples.pdf", width = 12, height =8)
 time_points <- 1:nrow(SOCB_2019_matrix)
 
 bspline_fits <- 4:42 |> 
-  purrr::map(\(k){
+  map(\(k){
     basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = k)
     smooth_result <- smooth.basis(argvals = time_points, 
                                   y = SOCB_2019_matrix, 
@@ -150,7 +150,7 @@ bspline_fits <- 4:42 |>
 
 # Compare mean absolute error and mean squared error
 bspline_fits |> 
-  purrr::map(\(fit) tibble(df = fit$df, mae = fit$mae, mse = fit$mse)) |> 
+  map(\(fit) tibble(df = fit$df, mae = fit$mae, mse = fit$mse)) |> 
   bind_rows() |> 
   print(n = Inf)
 
@@ -297,7 +297,7 @@ subdivide1 <- fpca_output |>
 
 # Elbow plots
 subdivide1 |> 
-  purrr::map(\(res) res$silhouette_summary) |> 
+  map(\(res) res$silhouette_summary) |> 
   bind_rows() |> 
   ggplot(aes(x = k, y = avg_sil)) +
   geom_line() +
@@ -319,7 +319,7 @@ ggsave("plots/Elbow.pdf", width = 12, height =8)
 
 # Extract data on clusters for all guilds
 initial_clusters <- subdivide1 |> 
-  purrr::map(\(res) res$output) |>
+  map(\(res) res$output) |>
   bind_rows()
 
 
@@ -398,7 +398,7 @@ subdivide2 <- fpca_output |>
   })
 
 final_clusters <- subdivide2 |> 
-  purrr::map(\(res) res$output) |>
+  map(\(res) res$output) |>
   bind_rows()
 
 # Plot clusters labelling outliers and singletons
@@ -493,7 +493,7 @@ subclusters <- final_clusters |>
   sort()
 
 clusters_list <- subclusters |> 
-  purrr::map(\(sc){
+  map(\(sc){
     list(species = final_clusters |> filter(Subcluster == sc) |> add_column(Merge = 0),
          lineage = sc)
   }) |> 
