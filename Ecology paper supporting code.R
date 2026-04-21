@@ -39,6 +39,7 @@ removed_species <- SOCB_2019 |>
   group_by(Species) |> 
   summarize(Start = min(year)) |> 
   mutate(Reason = "Incomplete",
+         Colour = "BrickRed",
          Description = paste("No data before",Start)) |> 
   select(-Start)    
   
@@ -54,6 +55,7 @@ SOCB_2019_habitat <- SOCB_2019_habitat |>
 removed_species <- SOCB_2019_habitat |> 
   filter(Guild %in% c("Other","None")) |> 
   mutate(Reason = Guild,
+         Colour = ifelse(Guild == "Other", "ForestGreen", "BurntOrange"),
          Description = ifelse(Guild == "Other", "Tagged as other", "No guild tag")) |> 
   select(-Guild) |> 
   bind_rows(removed_species)
@@ -210,9 +212,24 @@ removed_species <- fpca_output |>
   filter(Cos2 < .80) |> 
   select(Species, Cos2) |> 
   mutate(Reason = "Cos2",
-         Description = paste("Cos2 score is",Cos2)) |> 
+         Colour = "RoyalPurple",
+         Description = paste("Cos$^2$ score is",round(Cos2,2))) |> 
   select(-Cos2) |> 
   bind_rows(removed_species)
+
+# Create LaTeX table of removed species
+removed_species |> 
+  arrange(Species) |> 
+  mutate(Text = paste0("\\textcolor{",Colour,"}{",Species,"}", "&",
+                       "\\textcolor{",Colour,"}{",Description,"}")) |> 
+  select(Text) |>
+  rowid_to_column("Row") |> 
+  mutate(Row = ceiling(Row/2)) |> 
+  group_by(Row) |> 
+  reframe(Text = paste(paste(Text,collapse = "&"),"\\\\")) |> 
+  select(Text) |> 
+  write_csv("output/removed_species.tex", col_names = FALSE)
+  
 
 # Compute reconstructed trajectories based on first 2 PCs
 harmonics <- fda::eval.fd(time_points, fpca_result$harmonics)
