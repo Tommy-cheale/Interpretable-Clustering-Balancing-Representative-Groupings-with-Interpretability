@@ -175,8 +175,7 @@ scree_df |>
   geom_bar(stat = "identity", fill = "blue", color = "blue", alpha = 0.7) +
   geom_line(aes(y = cum_pve, group = 1), color = "darkgreen", linewidth = 1) +
   geom_point(aes(y = cum_pve), color = "darkgreen", size = 3, shape = 17) +
-  labs(title = "Proportion of Variance Captured by Each Functional Principal Component",
-       x = "Functional Principal Component",
+  labs(x = "Functional Principal Component",
        y = "Proportion of Variance Explained") +
   theme_minimal() +
   theme(
@@ -310,10 +309,8 @@ subdivide1 |>
   theme(
     axis.title.x = element_text(size = 20),  # Increase x-axis title size
     axis.title.y = element_text(size = 20),  # Increase y-axis title size
-    plot.title = element_text(size = 35, hjust = 0.5, face = "bold")  # Increase title size and center it
-  ) + 
-  plot_annotation(title = "Average Silhouette Score Computed for k = {2,...,10} Clusters Over Each Guild"
-)
+    plot.title = element_text(size = 35, hjust = 0.5, face = "bold"),  # Increase title size and center it
+    strip.text = element_text(size = 25))
 
 ggsave("plots/Elbow.pdf", width = 12, height =8)
 
@@ -341,18 +338,18 @@ initial_clusters |>
   )) +
   labs(
     x = "Year",
-    y = "Reconstructed Abundance Function"
+    y = "Max-Rescaled Abundance"
   ) +
   theme_minimal(base_size = 22) +  # makes everything bigger by default
   theme(
     legend.position = "none",
-    strip.text = element_text(size = 26, face = "bold"),   # facet titles
+    strip.text = element_text(size = 25, face = "bold"),   # facet titles
     axis.title = element_text(size = 24, face = "bold"),   # axis labels
     axis.text = element_text(size = 20),                   # tick labels
     plot.title = element_text(size = 28, face = "bold", hjust = 0.5)
   )
 
-ggsave("plots/Removed_Out.pdf", width = 12, height = 8)
+ggsave("plots/Removed_Out.pdf", width = 12, height = 6)
 
 # Repeat clustering excluding outliers and singletons
 subdivide2 <- fpca_output |> 
@@ -411,8 +408,7 @@ final_clusters |>
             aes(label = Species), color = "red", vjust = -1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
   facet_wrap(~ Guild) +
   theme_minimal() +
-  labs(title = "Species Projection Coefficients by Guild Sub-Cluster",
-       x = "FPC1",
+  labs(x = "FPC1",
        y = "FPC2",
        color = "Sub-Cluster")+
   theme(
@@ -715,16 +711,16 @@ for(clusters in c(3,8)){
     geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
     geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
     scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
-    facet_wrap(vars(label), ncol = 3) +
+    facet_wrap(vars(label), nrow = (clusters - 1) %/% 4 + 1) +
     labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
     theme_minimal() +
     theme(strip.text = element_text(size=25, face = "bold"),
           axis.title.y = element_text(size = 30, face = "bold"),
           axis.title.x = element_text(size = 30, face = "bold"),
-          legend.text = element_text(size = 22),
+          legend.text = element_text(size = 14),
           legend.position = "bottom",
           legend.title=element_blank()) +
     geom_line(data = join_data |> filter(Species == "Franklin's Gull"), colour ="red", lty = 2, linewidth = 1.5)
   
-  ggsave(paste0("plots/",clusters,"_cluster_line.pdf"), width = 12, height = 6 + 6 * (clusters == 8))
+  ggsave(paste0("plots/",clusters,"_cluster_line.pdf"), width = 12, height = 6 + 3 * (clusters == 8))
 }
