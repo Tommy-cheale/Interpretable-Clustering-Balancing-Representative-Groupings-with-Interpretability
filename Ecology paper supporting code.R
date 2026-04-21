@@ -431,7 +431,8 @@ ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 # List species by guild and cluster
 final_clusters |> 
   group_by(Guild, Cluster) |> 
-  summarize(Species = str_c(Species, collapse = ", "))
+  summarize(Species = str_c(Species, collapse = ", ")) |> 
+  write_csv("output/subcluster_membership.csv")
 
 # Add a unique label for each cluster (e.g., "Forest Birds 1")
 final_clusters <- final_clusters |> 
