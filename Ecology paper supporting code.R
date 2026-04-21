@@ -625,7 +625,7 @@ ggplot(segment(dendro_data)) +
   geom_text(data = label(dendro_data),
             aes(x = x, y = -label_offset, label = label),
             hjust = -0, vjust=-0.8 , angle = 90, size = 4.5) +
-  labs(title = "Dendrogram of Merged Clusters", x = "Original Cluster", y = "Height") +
+  labs(x = "Original Cluster", y = "Height") +
   theme_minimal(base_size = 16) +
   theme(
     axis.text.x = element_blank(),
