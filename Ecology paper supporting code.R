@@ -133,36 +133,19 @@ ggsave("plots/Examples.pdf", width = 12, height =8)
 ################################## Resmoothing ################################
 ###############################################################################
 
-# Fit B-splines with between 12 and 18 basis functions
-
+# Fit B-splines 
 time_points <- 1:nrow(SOCB_2019_matrix)
-
-bspline_fits <- 4:42 |> 
-  map(\(k){
-    basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = k)
-    smooth_result <- smooth.basis(argvals = time_points, 
-                                  y = SOCB_2019_matrix, 
-                                  fdParobj = basis_obj)
-    fd_obj <- smooth_result$fd
-    fit <- eval.fd(time_points,fd_obj)
-    mae <- max(abs(SOCB_2019_matrix - fit))
-    mse <- mean((SOCB_2019_matrix - fit)^2)
-    list(df = k, fd = fd_obj, fit = fit, mae = mae, mse = mse)
-  })
-
-# Compare mean absolute error and mean squared error
-bspline_fits |> 
-  map(\(fit) tibble(df = fit$df, mae = fit$mae, mse = fit$mse)) |> 
-  bind_rows() |> 
-  print(n = Inf)
+basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = 42)
+smooth_result <- smooth.basis(argvals = time_points, 
+                              y = SOCB_2019_matrix, 
+                              fdParobj = basis_obj)
 
 ###############################################################################
 ################################ Stage 1: FPCA ################################
 ###############################################################################
 
 # Conduct FPCA using selected number of basis functions
-k <- 22
-fpca_result <- pca.fd(bspline_fits[[k - 3]]$fd, nharm = k) # Perform FPCA
+fpca_result <- pca.fd(smooth_result$fd, nharm = 42) # Perform FPCA
 
 # Scree plot
 scree_df <- tibble(eigenvalue = fpca_result$values,
@@ -458,14 +441,14 @@ fpca_means <- final_clusters |>
           Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
 
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, 3, NA),
-               c(4, 5, NA, NA),
-               c(6, 7, 8, NA),
-               c(9, 10, NA, NA),
-               c(11, 12, NA, NA),
-               13:16,
-               17:20,
-               21:24) |> 
+layout <- list(c(1, 2, 3, NA, NA, NA), # Aerial Insectivores
+               c(4, 5, NA, NA, NA, NA), # Birds of Prey
+               c(6, 7, 8, 9, 10, 11), # Forest Birds
+               c(12, 13, NA, NA, NA, NA), # Grassland Birds
+               c(14, 15, NA, NA, NA, NA), # Seabirds
+               c(16, 17, 18, 19, NA, NA), # Shorebirds
+               c(20, 21, 22, 23, NA, NA), # Waterfowl
+               c(24, 25, 26, 27, NA, NA)) |> # Wetland Birds
   do.call(what = "rbind")
 
 final_clusters |> 
@@ -667,7 +650,7 @@ ggsave("plots/Dend.pdf", width = 12, height = 8)
 
 for(clusters in c(3,8)){
 
-  merge <- 24 - clusters
+  merge <- nrow(merge_df) - clusters
   
   centroids <- PC_points[[merge]] |> 
     group_by(CurrentCluster, Merge) |> 
