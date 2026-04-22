@@ -192,7 +192,7 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
 
 # Identify species with low cos2 scores
 removed_species <- fpca_output |> 
-  filter(Cos2 < .80) |> 
+  filter(Cos2 < .75) |> 
   select(Species, Cos2) |> 
   mutate(Reason = "Cos2",
          Colour = "RoyalPurple",
