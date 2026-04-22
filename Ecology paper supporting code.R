@@ -336,7 +336,6 @@ initial_clusters <- subdivide1 |>
   map(\(res) res$output) |>
   bind_rows()
 
-
 # Plot trajectories for outlying species
 initial_clusters |> 
   filter(Singleton | Outlier) |> 
@@ -445,12 +444,6 @@ final_clusters |>
 
 ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 
-# List species by guild and cluster
-final_clusters |> 
-  group_by(Guild, Cluster) |> 
-  summarize(Species = str_c(Species, collapse = ", ")) |> 
-  write_csv("output/subcluster_membership.csv")
-
 # Add a unique label for each cluster (e.g., "Forest Birds 1")
 final_clusters <- final_clusters |> 
   mutate(Subcluster = paste(Guild, Cluster))
@@ -495,6 +488,18 @@ final_clusters |>
 
 ggsave("plots/All_Subgroups.pdf", width = 12, height = 8)
 
+# Generate LaTeX output
+final_clusters |> 
+  group_by(Guild) |> 
+  group_map(\(df,keys){
+    tibble(Text = paste("\\multicolumn{2}{l}{\\textbf{",keys[1],"}}\\\\")) |> 
+      bind_rows(df |> 
+                  group_by(Cluster) |> 
+                  summarize(Text = paste(Cluster[1]," & ", paste(Species, collapse = ", "), "\\\\")) |> 
+                  select(Text))
+  }) |> 
+  bind_rows() |> 
+  write_csv("output/subcluster_membership.tex", col_names = FALSE, quote = "none")
 
 ######################################################################################
 ############################# Stage 3: Rejoining #####################################
