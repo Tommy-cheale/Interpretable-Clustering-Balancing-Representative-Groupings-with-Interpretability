@@ -621,7 +621,15 @@ merge_labels_df <- left_join(merge_labels_df, midpoints, by = "y")
 
 label_offset <- max(dendro_data$segments$yend) * 0.11
 
+
+# Identify solutions to focus
+clusters <- c(3,8)
+merges <- nrow(merge_df) - clusters + 1
+
 # Construct dendrogram
+
+line_heights <- (merge_df$Height[merges] + merge_df$Height[merges + 1])/2
+
 ggplot(segment(dendro_data)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_text(data = label(dendro_data),
@@ -641,16 +649,16 @@ ggplot(segment(dendro_data)) +
             aes(x = x, y = y - (label_offset*0.2), label = label),
             color = "blue", size = 4, fontface = "bold")+
   ylim(-label_offset * 1.05, max(dendro_data$segments$yend))+
-geom_hline(yintercept = 2.555, colour = "blue", linetype = "dashed", linewidth = 1) +
-geom_hline(yintercept = 3.14, colour = "orange", linetype = "dashed", linewidth = 1)
+geom_hline(yintercept = line_heights, colour = c("blue","orange"), linetype = "dashed", linewidth = 1)
 
 ggsave("plots/Dend.pdf", width = 12, height = 8)
 
-# Plot results for the 3-cluster or 8-cluster solution
+# Plot results for the selected solutions
 
-for(clusters in c(3,8)){
+for(i in 1:length(clusters)){
 
-  merge <- nrow(merge_df) - clusters
+  cluster <- clusters[i]
+  merge <- merges[i]
   
   centroids <- PC_points[[merge]] |> 
     group_by(CurrentCluster, Merge) |> 
@@ -690,7 +698,7 @@ for(clusters in c(3,8)){
     )+
     scale_color_discrete(labels = function(x) str_wrap(x, width = 20))
   
-  ggsave(paste0("plots/",clusters,"_cluster_scatter.pdf"), width = 12, height = 6)
+  ggsave(paste0("plots/",cluster,"_cluster_scatter.pdf"), width = 12, height = 6)
   
   rejoined_means <- centroids |> 
     group_by(CurrentCluster, Merge) |> 
@@ -717,7 +725,7 @@ for(clusters in c(3,8)){
     geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
     geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
     scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
-    facet_wrap(vars(label), nrow = (clusters - 1) %/% 4 + 1) +
+    facet_wrap(vars(label), nrow = (cluster - 1) %/% 4 + 1) +
     labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
     theme_minimal() +
     theme(strip.text = element_text(size=25, face = "bold"),
@@ -728,5 +736,5 @@ for(clusters in c(3,8)){
           legend.title=element_blank()) +
     geom_line(data = join_data |> filter(Species == "Franklin's Gull"), colour ="red", lty = 2, linewidth = 1.5)
   
-  ggsave(paste0("plots/",clusters,"_cluster_line.pdf"), width = 12, height = 6 + 3 * (clusters == 8))
+  ggsave(paste0("plots/",cluster,"_cluster_line.pdf"), width = 12, height = 6 + 3 * (clusters == 8))
 }
