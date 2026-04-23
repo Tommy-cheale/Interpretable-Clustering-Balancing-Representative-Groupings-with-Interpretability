@@ -714,7 +714,7 @@ for(i in 1:length(clusters)){
     theme_minimal() +
     labs(
       title = paste("Merge", merge),
-      subtitle = paste("Merge distance:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
+      subtitle = paste("Height:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
       color = "Cluster (Lineage)",
     ) +
     theme(
