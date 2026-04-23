@@ -700,7 +700,7 @@ for(i in 1:length(clusters)){
       axis.title.y = element_text(size=18, face="bold"),
       legend.box = "vertical"     # spacing between items
     )+
-    scale_color_discrete(labels = function(x) str_wrap(x, width = 20))
+    scale_color_discrete(labels = function(x) str_wrap(x, width = 67))
   
   ggsave(paste0("plots/",cluster,"_cluster_scatter.pdf"), width = 12, height = 6)
   
