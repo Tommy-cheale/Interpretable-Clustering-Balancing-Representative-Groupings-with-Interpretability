@@ -397,6 +397,43 @@ final_clusters <- subdivide2 |>
   map(\(res) res$output) |>
   bind_rows()
 
+# Compute fits at cluster means
+fpca_means <- final_clusters |> 
+  group_by(Guild, Cluster) |> 
+  summarize(PC1 = mean(PC1),
+            PC2 = mean(PC2),
+            .groups = "keep") |> 
+  reframe(year = 1975:2016,
+          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
+
+# Reorder the clusters
+cluster_order <- fpca_means |> 
+  filter(year %in% c(1975, 2016)) |> 
+  pivot_wider(names_from = year, values_from = Mean) |> 
+  mutate(Diff = `2016` - `1975`) |> 
+  arrange(Guild, Diff)|> 
+  group_by(Guild)  |> 
+  mutate(New_Cluster = 1:n()) |> 
+  select(Guild, Cluster, New_Cluster)
+
+final_clusters <- final_clusters |> 
+  full_join(cluster_order, by = c("Guild","Cluster")) |> 
+  mutate(Cluster = New_Cluster) |> 
+  select(-New_Cluster)
+
+fpca_means <- fpca_means |> 
+  full_join(cluster_order, by = c("Guild","Cluster")) |> 
+  mutate(Cluster = New_Cluster) |> 
+  select(-New_Cluster)
+
+
+# Add a unique label for each cluster (e.g., "Forest Birds 1")
+final_clusters <- final_clusters |> 
+  mutate(Subcluster = paste(Guild, Cluster)) 
+
+fpca_means <- fpca_means |> 
+  mutate(Subcluster = paste(Guild, Cluster)) 
+
 # Plot clusters labelling outliers and singletons
 final_clusters |> 
   ggplot(aes(x = PC1, y = PC2, color = factor(Cluster))) +
@@ -427,28 +464,15 @@ final_clusters |>
 
 ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 
-# Add a unique label for each cluster (e.g., "Forest Birds 1")
-final_clusters <- final_clusters |> 
-  mutate(Subcluster = paste(Guild, Cluster))
-
-# Compute fits at cluster means
-fpca_means <- final_clusters |> 
-  group_by(Guild, Cluster, Subcluster) |> 
-  summarize(PC1 = mean(PC1),
-            PC2 = mean(PC2),
-            .groups = "keep") |> 
-  reframe(year = 1975:2016,
-          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
-
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, 3, NA, NA, NA), # Aerial Insectivores
-               c(4, 5, NA, NA, NA, NA), # Birds of Prey
+layout <- list(c(1, 2, NA, 3, NA, NA), # Aerial Insectivores
+               c(NA, NA, NA, 4, NA, 5), # Birds of Prey
                c(6, 7, 8, 9, 10, 11), # Forest Birds
                c(12, 13, NA, NA, NA, NA), # Grassland Birds
-               c(14, 15, NA, NA, NA, NA), # Seabirds
-               c(16, 17, 18, 19, NA, NA), # Shorebirds
-               c(20, 21, 22, 23, NA, NA), # Waterfowl
-               c(24, 25, 26, 27, NA, NA)) |> # Wetland Birds
+               c(NA, NA, NA, 14, NA, 15), # Seabirds
+               c(16, NA, 17, 18, 19, NA), # Shorebirds
+               c(NA, 20, NA, 21, 22, 23), # Waterfowl
+               c(24, 25, NA, NA, 26, 27)) |> # Wetland Birds
   do.call(what = "rbind")
 
 final_clusters |> 
