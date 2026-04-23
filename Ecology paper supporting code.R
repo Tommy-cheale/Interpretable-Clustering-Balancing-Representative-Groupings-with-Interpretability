@@ -470,7 +470,7 @@ layout <- list(c(1, 2, NA, 3, NA, NA), # Aerial Insectivores
                c(6, 7, 8, 9, 10, 11), # Forest Birds
                c(12, 13, NA, NA, NA, NA), # Grassland Birds
                c(NA, NA, NA, 14, NA, 15), # Seabirds
-               c(16, NA, 17, 18, 19, NA), # Shorebirds
+               c(16, NA, 17, 18, NA, 19), # Shorebirds
                c(NA, 20, NA, 21, 22, 23), # Waterfowl
                c(24, 25, NA, NA, 26, 27)) |> # Wetland Birds
   do.call(what = "rbind")
