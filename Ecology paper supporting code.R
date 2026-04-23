@@ -247,7 +247,7 @@ mahal_dist <- function(M){
 
 subdivide1 <- fpca_output |> 
   filter(! (Guild %in% c("Other","None")),
-         Cos2 > .80) |> 
+         Cos2 > .75) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
