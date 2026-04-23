@@ -621,10 +621,14 @@ merge_labels_df <- left_join(merge_labels_df, midpoints, by = "y")
 
 label_offset <- max(dendro_data$segments$yend) * 0.11
 
+# Identify solutions to focus on
+merge_df |> 
+  mutate(Height1 = lead(Height),
+         Diff = Height1 - Height) |> 
+  arrange(desc(Diff))
 
-# Identify solutions to focus
-clusters <- c(3,8)
-merges <- nrow(merge_df) - clusters + 1
+merges <-  c(24,16)
+clusters <- nrow(merge_df) - merges +1 
 
 # Construct dendrogram
 
