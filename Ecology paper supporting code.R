@@ -476,7 +476,7 @@ final_clusters |>
 ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, NA, 3, NA, NA), # Aerial Insectivores
+layout <- list(c(1, 2, 3, NA, NA, NA), # Aerial Insectivores
                c(NA, NA, NA, 4, NA, 5), # Birds of Prey
                c(6, 7, 8, 9, 10, 11), # Forest Birds
                c(12, 13, NA, NA, NA, NA), # Grassland Birds
