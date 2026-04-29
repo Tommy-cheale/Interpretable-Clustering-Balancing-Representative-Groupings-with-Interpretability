@@ -21,8 +21,12 @@ SOCB_2019 <- read_csv("All_SOCB_2019_population_indices.csv") |>
   select(Species = English_Name, year, index) |>
   arrange(Species, year)
 
-# Load Guild data
+# Load guild data
 SOCB_2019_habitat <- read_csv("SOCB_2019_habitat_guilds.csv")
+
+# Merge data
+SOCB_2019 <- SOCB_2019 |> 
+  full_join(SOCB_2019_habitat, by = "Species")
 
 # Filter to after 1974
 SOCB_2019 <- SOCB_2019 |>
@@ -67,37 +71,51 @@ SOCB_2019  <- SOCB_2019 |>
 SOCB_2019_habitat <- SOCB_2019_habitat |> 
   filter(! (Species %in% pull(removed_species, "Species")))
 
-# Compute max-rescaled indices
-SOCB_2019 <- SOCB_2019 |>
-  group_by(Species) |>
-  mutate(mr_index = index / max(index)) |> 
-  ungroup()
+###############################################################################
+################################## Resmoothing ################################
+###############################################################################
 
-# Create wide data
-SOCB_2019_wide <- SOCB_2019 |> 
-  select(Species, year, mr_index) |> 
-  pivot_wider(names_from = "Species", values_from = "mr_index")
-
-# Create data matrix required by functions in the fda package
-SOCB_2019_matrix <- SOCB_2019_wide |> 
+# Create data matrix
+SOCB_2019_matrix <- SOCB_2019 |> 
+  select(Species, year, index) |> 
+  pivot_wider(names_from = "Species", values_from = "index") |> 
   select(-year) |> 
   as.matrix()
 
-rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(year)
-            
+# Fit B-splines 
+K <- nrow(SOCB_2019_matrix)
+time_points <- 1:K
+basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = K)
+smooth_result <- smooth.basis(argvals = time_points, 
+                              y = SOCB_2019_matrix, 
+                              fdParobj = basis_obj)
+
+# Extract resmoothed fits
+SOCB_2019_resmoothed <- eval.fd(1:K,smooth_result$fd)
+
+# Apply max-rescaling
+SOCB_2019_max_rescaled <- SOCB_2019_resmoothed |>
+  apply(2, \(y) y/max(y))
+
+# Append to original data
+SOCB_2019 <- SOCB_2019_max_rescaled |> 
+  as_tibble() |> 
+  add_column(year = 1975:2016) |> 
+  pivot_longer(-year,names_to = "Species", values_to = "mr_index") |> 
+  left_join(SOCB_2019, by = c("Species","year"))
+
 ################################################################################
 ################################ Data Exploration ##############################
 ################################################################################
 
 # Compute mean trends by guild
 SOCB_2019_mean_guild <- SOCB_2019 |> 
-  left_join(SOCB_2019_habitat, by = "Species") |> 
   group_by(Guild, year) |> 
-  summarize(mr_mean = mean(mr_index))
+  summarize(mr_mean = mean(mr_index),
+            .groups = "drop")
 
 # Plot rescaled curves for select guilds
 SOCB_2019 |> 
-  left_join(SOCB_2019_habitat, by = "Species") |> 
   filter(Guild %in% (c("Forest Birds", "Aerial Insectivores", "Shorebirds"))) |> 
   ggplot(aes(x = year, y = mr_index, group = Species, color = Guild)) +
   geom_line(alpha = 0.4) +
@@ -129,22 +147,17 @@ SOCB_2019 |>
 
 ggsave("plots/Examples.pdf", width = 12, height =8)
 
-###############################################################################
-################################## Resmoothing ################################
-###############################################################################
-
-# Fit B-splines 
-time_points <- 1:nrow(SOCB_2019_matrix)
-basis_obj <- create.bspline.basis(rangeval = range(time_points), nbasis = 42)
-smooth_result <- smooth.basis(argvals = time_points, 
-                              y = SOCB_2019_matrix, 
-                              fdParobj = basis_obj)
 
 ###############################################################################
 ################################ Stage 1: FPCA ################################
 ###############################################################################
 
-# Conduct FPCA using selected number of basis functions
+# Reit B-splines to max-rescaled trajectories
+smooth_result <- smooth.basis(argvals = time_points, 
+                              y = SOCB_2019_max_rescaled, 
+                              fdParobj = basis_obj)
+
+# Conduct FPCA 
 fpca_result <- pca.fd(smooth_result$fd, nharm = 42) # Perform FPCA
 
 # Scree plot
@@ -184,7 +197,7 @@ Explained_var <- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2] |>
 Cos2_scores <- Explained_var/Total_var
 
 # Construct output data frame
-fpca_output <- tibble(Species = colnames(SOCB_2019_matrix),
+fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
                       PC1 = fpca_result$scores[,1],
                       PC2 = fpca_result$scores[,2],
                       Cos2 = Cos2_scores) |> 
