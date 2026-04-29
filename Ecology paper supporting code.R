@@ -233,12 +233,13 @@ harmonics <- eval.fd(time_points, fpca_result$harmonics)
 fpca_mean <- eval.fd(time_points, fpca_result$meanfd) |> 
   as.vector()
 
-fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + fpca_mean) |> 
+SOCB_2019 <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + fpca_mean) |> 
   as_tibble(.name_repair = "minimal") |> 
   set_names(1975:2016) |> 
   add_column(Species = SOCB_2019_habitat |> pull("Species"), .before = 1) |> 
   pivot_longer(-Species, names_to = "year", values_to = "fit") |> 
-  mutate(year = as.numeric(year))
+  mutate(year = as.numeric(year)) |> 
+  left_join(SOCB_2019, by = c("Species", "year"))
   
 ################################################################################################
 ##################################### Stage 2: Subdividing #####################################
@@ -335,8 +336,6 @@ initial_clusters <- subdivide1 |>
 initial_clusters |> 
   filter(Singleton | Outlier) |> 
   left_join(SOCB_2019, by = c("Species")) |> 
-  mutate(mr_index = mr_index) |> 
-  left_join(fpca_fit, by = c("Species","year")) |> 
   ggplot(aes(x = year, y = mr_index, color = Species)) +
   geom_line(linewidth = 1.5) +
   geom_line(mapping = aes(x = year, y = fit), lty = 2,linewidth = 1.5) +
