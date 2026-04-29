@@ -86,7 +86,7 @@ SOCB_2019_matrix <- SOCB_2019_wide |>
 rownames(SOCB_2019_matrix) <- SOCB_2019_wide |> pull(year)
             
 ################################################################################
-################################ Data Explorattion #############################
+################################ Data Exploration ##############################
 ################################################################################
 
 # Compute mean trends by guild
@@ -215,9 +215,9 @@ removed_species |>
   
 
 # Compute reconstructed trajectories based on first 2 PCs
-harmonics <- fda::eval.fd(time_points, fpca_result$harmonics)
+harmonics <- eval.fd(time_points, fpca_result$harmonics)
 
-fpca_mean <- fda::eval.fd(time_points, fpca_result$meanfd) |> 
+fpca_mean <- eval.fd(time_points, fpca_result$meanfd) |> 
   as.vector()
 
 fpca_fit <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2]) + fpca_mean) |> 
