@@ -755,6 +755,7 @@ for(i in 1:length(clusters)){
                     "Aerial Insectivores" = "#7f7f7f")
   
   join_data <- PC_points[[merge]] |> 
+    select(Species, Cluster, Subcluster, Merge, CurrentCluster) |> 
     right_join(SOCB_2019, by = "Species") |> 
     filter(!is.na(CurrentCluster)) |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ", Merge)))
