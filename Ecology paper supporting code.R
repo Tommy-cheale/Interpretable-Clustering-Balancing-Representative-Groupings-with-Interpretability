@@ -344,7 +344,7 @@ initial_clusters |>
     "Evening Grosbeak"   = "steelblue",
     "Rusty Blackbird"    = "darkgreen",
     "Trumpeter Swan"     = "firebrick",
-    "Wandering Tattler"  = "purple"
+    "Eared Grebe"  = "purple"
   )) +
   labs(
     x = "Year",
