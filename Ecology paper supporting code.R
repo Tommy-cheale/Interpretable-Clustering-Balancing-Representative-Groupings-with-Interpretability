@@ -12,6 +12,9 @@ library(ggh4x)
 library(patchwork)
 library(tidyverse)
 
+# Set control parameters
+cos2_tol <- .75
+
 ###############################################################################
 ################################ Data Processing ##############################
 ###############################################################################
@@ -205,7 +208,7 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
 
 # Identify species with low cos2 scores
 removed_species <- fpca_output |> 
-  filter(Cos2 < .75) |> 
+  filter(Cos2 < cos2_tol) |> 
   select(Species, Cos2) |> 
   mutate(Reason = "Cos2",
          Colour = "RoyalPurple",
@@ -260,7 +263,7 @@ mahal_dist <- function(M){
 }
 
 subdivide1 <- fpca_output |> 
-  filter(Cos2 > .75) |> 
+  filter(Cos2 > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
@@ -367,7 +370,7 @@ subdivide2 <- fpca_output |>
   filter(!is.na(Guild),
          !Singleton,
          !Outlier,
-         Cos2 > .80) |> 
+         Cos2 > .75) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
