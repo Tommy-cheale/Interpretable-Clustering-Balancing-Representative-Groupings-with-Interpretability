@@ -61,7 +61,7 @@ SOCB_2019_habitat <- SOCB_2019_habitat |>
 
 # Identify species with only Other habitat tag or No habitat tags
 removed_species <- SOCB_2019_habitat |> 
-  filter(Guild %in% c("Other","None")) |> 
+  filter(Guild %in% c("None")) |> 
   mutate(Reason = Guild,
          Colour = ifelse(Guild == "Other", "ForestGreen", "BurntOrange"),
          Description = ifelse(Guild == "Other", "Tagged as other", "No guild tag")) |> 
@@ -488,13 +488,14 @@ final_clusters |>
 
 # Plot original trajectories by subcluster
 layout <- list(c(1, 2, 3, NA, NA), # Aerial Insectivores
-               c(NA, NA, 4, NA, 5), # Birds of Prey
-               c(6, NA, 7, 8, 9), # Forest Birds
-               c(10, NA, 11, NA, NA), # Grassland Birds
-               c(NA, NA, 12, NA, 13), # Seabirds
-               c(14, 15, 16, NA, 17), # Shorebirds
-               c(NA, NA, 18, 19, 20), # Waterfowl
-               c(21, 22, NA, 23, 24)) |> # Wetland Birds
+               c(NA, NA, 4, 5, 6), # Birds of Prey
+               c(7, NA, 8, 9, 10), # Forest Birds
+               c(11, NA, 12, NA, NA), # Grassland Birds
+               c(13, 14, 15, 16, NA), # Other
+               c(NA, NA, 17, NA, 18), # Seabirds
+               c(19, 20, 21, NA, 22), # Shorebirds
+               c(NA, NA, 23, 24, 25), # Waterfowl
+               c(26, 27, NA, 28, 29)) |> # Wetland Birds
   do.call(what = "rbind")
 
 final_clusters |> 
@@ -675,7 +676,7 @@ merge_df |>
          Diff = Height1 - Height) |> 
   arrange(desc(Diff))
 
-merges <-  c(21,15)
+merges <-  c(26,18)
 clusters <- nrow(merge_df) - merges +1 
 
 # Construct dendrogram
