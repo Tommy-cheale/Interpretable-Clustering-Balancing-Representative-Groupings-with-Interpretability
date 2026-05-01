@@ -188,12 +188,18 @@ scree_df |>
 
 ggsave("plots/Scree.pdf", width = 12, height = 8)
 
-# Compute Cos2 scores (proportion of variance explained by first 2 PCs)
-Total_var <- fpca_result$scores^2 %*% fpca_result$values |> 
-  as.vector()
+# Compute Cos2 scores 
+#Total_var <- fpca_result$scores^2 %*% fpca_result$values |> 
+#  as.vector()
 
-Explained_var <- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2] |> 
-  as.vector()
+#Explained_var <- fpca_result$scores[,1:2]^2 %*% fpca_result$values[1:2] |> 
+#  as.vector()
+
+Explained_var <- fpca_result$scores[,1:2]^2 |> 
+  apply(1,sum)
+
+Total_var <- fpca_result$scores^2 |> 
+  apply(1,sum)
 
 Cos2_scores <- Explained_var/Total_var
 
