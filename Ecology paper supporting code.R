@@ -14,6 +14,7 @@ library(tidyverse)
 
 # Set control parameters
 cos2_tol <- .75
+figure_format <- "jpg" # File format for saved figures: jpg or pdf.
 
 ###############################################################################
 ################################ Data Processing ##############################
@@ -147,9 +148,9 @@ SOCB_2019 |>
         axis.title = element_text(size = 25, face = "bold"),        # x and y axis titles
         axis.text = element_text(size = 18)  
   )
-
-ggsave("plots/Examples.pdf", width = 12, height =8)
-
+"plots/Examples" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height =8)
 
 ###############################################################################
 ################################ Stage 1: FPCA ################################
@@ -186,7 +187,9 @@ scree_df |>
   ) +
   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Cumulative Variance"))
 
-ggsave("plots/Scree.pdf", width = 12, height = 8)
+"plots/Scree" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height = 8)
 
 # Compute Cos2 scores 
 Explained_var <- fpca_result$scores[,1:2]^2 |> 
@@ -326,7 +329,9 @@ subdivide1 |>
     plot.title = element_text(size = 35, hjust = 0.5, face = "bold"),  # Increase title size and center it
     strip.text = element_text(size = 25))
 
-ggsave("plots/Elbow.pdf", width = 12, height =8)
+"plots/Elbow" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height =8)
 
 # Extract data on clusters for all guilds
 initial_clusters <- subdivide1 |> 
@@ -474,7 +479,9 @@ final_clusters |>
   geom_vline(xintercept = 0) + 
   geom_hline(yintercept = 0)
 
-ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
+"plots/Cluster_Out" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height = 8)
 
 # Plot original trajectories by subcluster
 layout <- list(c(1, 2, 3, NA, NA), # Aerial Insectivores
@@ -505,7 +512,9 @@ final_clusters |>
     axis.text = element_text(size = 11, face="bold"),
     axis.title.x = element_text(size=30 ))
 
-ggsave("plots/All_Subgroups.pdf", width = 12, height = 8)
+"plots/All_Subgroups" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height = 8)
 
 # Generate LaTeX output
 final_clusters |> 
@@ -691,7 +700,9 @@ ggplot(segment(dendro_data)) +
   ylim(-label_offset * 1.05, max(dendro_data$segments$yend))+
 geom_hline(yintercept = line_heights, colour = c("blue","orange"), linetype = "dashed", linewidth = 1)
 
-ggsave("plots/Dend.pdf", width = 12, height = 8)
+"plots/Dend" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height = 8)
 
 # Plot results for the selected solutions
 
@@ -738,7 +749,8 @@ for(i in 1:length(clusters)){
     )+
     scale_color_discrete(labels = function(x) str_wrap(x, width = 67))
   
-  ggsave(paste0("plots/",cluster,"_cluster_scatter.pdf"), width = 12, height = 6)
+  paste0("plots/",cluster,"_cluster_scatter",".",figure_format) |> 
+    ggsave(width = 12, height = 6)
   
   rejoined_means <- centroids |> 
     group_by(CurrentCluster, Merge) |> 
@@ -777,5 +789,6 @@ for(i in 1:length(clusters)){
           legend.title=element_blank()) +
     geom_line(data = join_data |> filter(Species == "Franklin's Gull"), colour ="red", lty = 2, linewidth = 1.5)
   
-  ggsave(paste0("plots/",cluster,"_cluster_line.pdf"), width = 12, height = 6 + 3 * (clusters == 8))
+  paste0("plots/",cluster,"_cluster_line", ".",figure_format) |> 
+    ggsave(width = 12, height = 6 + 3 * (clusters == 8))
 }
