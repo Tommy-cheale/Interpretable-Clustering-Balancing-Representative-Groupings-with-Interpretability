@@ -483,14 +483,14 @@ final_clusters |>
 ggsave("plots/Cluster_Out.pdf", width = 12, height = 8)
 
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, 3, NA, NA, NA), # Aerial Insectivores
-               c(NA, NA, NA, 4, NA, 5), # Birds of Prey
-               c(6, 7, 8, 9, 10, 11), # Forest Birds
-               c(12, 13, NA, NA, NA, NA), # Grassland Birds
-               c(NA, NA, NA, 14, NA, 15), # Seabirds
-               c(16, NA, 17, 18, NA, 19), # Shorebirds
-               c(NA, 20, NA, 21, 22, 23), # Waterfowl
-               c(24, 25, NA, NA, 26, 27)) |> # Wetland Birds
+layout <- list(c(1, 2, 3, NA, NA), # Aerial Insectivores
+               c(NA, NA, 4, NA, 5), # Birds of Prey
+               c(6, NA, 7, 8, 9), # Forest Birds
+               c(10, NA, 11, NA, NA), # Grassland Birds
+               c(NA, NA, 12, NA, 13), # Seabirds
+               c(14, 15, 16, NA, 17), # Shorebirds
+               c(NA, NA, 18, 19, 20), # Waterfowl
+               c(21, 22, NA, 23, 24)) |> # Wetland Birds
   do.call(what = "rbind")
 
 final_clusters |> 
@@ -669,7 +669,7 @@ merge_df |>
          Diff = Height1 - Height) |> 
   arrange(desc(Diff))
 
-merges <-  c(24,16)
+merges <-  c(21,15)
 clusters <- nrow(merge_df) - merges +1 
 
 # Construct dendrogram
