@@ -269,19 +269,20 @@ subdivide1 <- fpca_output |>
   group_map(\(guild_data,keys){
     # Extract guild name
     guild <- keys[[1]]
- 
+    
     # Compute distance matrix
     d <- dist(guild_data[, c("PC1", "PC2")])
     
     # Apply k-means clustering for each possible k
-    km_res <- lapply(2:10, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
+    max_k <- min(10, nrow(guild_data) - 1)
+    km_res <- lapply(2:max_k, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
     
     # Compute silhouette scores
     sil <- lapply(km_res, \(km) silhouette(km$cluster, d))
     
     # Compute average silhouette scores
     sil_summary <- tibble(Guild = guild,
-                          k = 2:10,
+                          k = 2:max_k,
                           avg_sil = sapply(sil, \(s) mean(s[,"sil_width"])))
     
     # Select the k with the maximum average silhouette width
@@ -383,14 +384,15 @@ subdivide2 <- fpca_output |>
     d <- dist(guild_data[, c("PC1", "PC2")])
     
     # Apply k-means clustering for each possible k
-    km_res <- lapply(2:10, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
+    max_k <- min(10, nrow(guild_data) - 1)
+    km_res <- lapply(2:max_k, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
     
     # Compute silhouette scores
     sil <- lapply(km_res, \(km) silhouette(km$cluster, d))
     
     # Compute average silhouette scores
     sil_summary <- tibble(Guild = guild,
-                          k = 2:10,
+                          k = 2:max_k,
                           avg_sil = sapply(sil, \(s) mean(s[,"sil_width"])))
     
     # Select the k with the maximum average silhouette width
