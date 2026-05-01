@@ -366,7 +366,9 @@ initial_clusters |>
     plot.title = element_text(size = 28, face = "bold", hjust = 0.5)
   )
 
-ggsave("plots/Removed_Out.pdf", width = 12, height = 6)
+"plots/Removed_Out" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height = 6)
 
 # Repeat clustering excluding outliers and singletons
 subdivide2 <- fpca_output |> 
