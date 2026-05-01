@@ -368,7 +368,7 @@ subdivide2 <- fpca_output |>
   filter(!is.na(Guild),
          !Singleton,
          !Outlier,
-         Cos2 > .75) |> 
+         Cos2 > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
