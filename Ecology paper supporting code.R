@@ -136,7 +136,6 @@ SOCB_2019 |>
     "Aerial Insectivores" = "#7f7f7f"
   )) +
   labs(
-    title = "Rescaled Abundance Over Time for Selected Guilds",
     y = "Rescaled Annual Abundance",
     x = "Year",
     color = "Guild"
