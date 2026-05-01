@@ -164,11 +164,9 @@ smooth_result <- smooth.basis(argvals = time_points,
 fpca_result <- pca.fd(smooth_result$fd, nharm = 42) # Perform FPCA
 
 # Scree plot
-scree_df <- tibble(eigenvalue = fpca_result$values,
-                   sd = sqrt(eigenvalue)) |> 
-  mutate(pc = 1:n(),
-         pve = eigenvalue / sum(eigenvalue),
-         cum_pve = cumsum(pve))
+scree_df <- tibble(pc = 1:42,
+                   pve = fpca_result$varprop,
+                   cum_pve = cumsum(pve))
 
 scree_df |> 
   filter(pc <= 8) |> 
