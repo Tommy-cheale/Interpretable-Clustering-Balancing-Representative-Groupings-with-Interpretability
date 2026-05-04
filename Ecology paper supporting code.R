@@ -191,29 +191,31 @@ scree_df |>
   ggsave(width = 12, height = 8)
 
 # Compute Cos2 scores 
-Explained_var <- fpca_result$scores[,1:2]^2 |> 
-  apply(1,sum)
+Explained_var <- fpca_result$scores[,1:5]^2 |> 
+  apply(1,cumsum)
 
 Total_var <- fpca_result$scores^2 |> 
   apply(1,sum)
 
-Cos2_scores <- Explained_var/Total_var
+Cos2_scores <- (t(Explained_var)/Total_var) |> 
+  as_tibble() |> 
+  set_names(paste0("Cos2_",1:5))
 
 # Construct output data frame
 fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
                       PC1 = fpca_result$scores[,1],
-                      PC2 = fpca_result$scores[,2],
-                      Cos2 = Cos2_scores) |> 
+                      PC2 = fpca_result$scores[,2]) |> 
+  bind_cols(Cos2 = Cos2_scores) |> 
   left_join(SOCB_2019_habitat, by = "Species")
 
 # Identify species with low cos2 scores
 removed_species <- fpca_output |> 
-  filter(Cos2 < cos2_tol) |> 
-  select(Species, Cos2) |> 
+  filter(Cos2_1 < cos2_tol) |> 
+  select(Species, Cos2_1) |> 
   mutate(Reason = "Cos2",
          Colour = "RoyalPurple",
-         Description = paste("Cos$^2$ score is",round(Cos2,2))) |> 
-  select(-Cos2) |> 
+         Description = paste("Cos$^2$ score is",round(Cos2_1,2))) |> 
+  select(-starts_with("Cos2")) |> 
   bind_rows(removed_species)
 
 # Create LaTeX table of removed species
@@ -263,7 +265,7 @@ mahal_dist <- function(M){
 }
 
 subdivide1 <- fpca_output |> 
-  filter(Cos2 > cos2_tol) |> 
+  filter(Cos2_1 > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
@@ -375,7 +377,7 @@ subdivide2 <- fpca_output |>
   filter(!is.na(Guild),
          !Singleton,
          !Outlier,
-         Cos2 > cos2_tol) |> 
+         Cos2_1 > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
@@ -785,7 +787,7 @@ for(i in 1:length(clusters)){
     facet_wrap(vars(label), nrow = (cluster - 1) %/% 4 + 1) +
     labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
     theme_minimal() +
-    theme(strip.text = element_text(size=25, face = "bold"),
+    theme(strip.text = element_text(size=16, face = "bold"),
           axis.title.y = element_text(size = 30, face = "bold"),
           axis.title.x = element_text(size = 30, face = "bold"),
           legend.text = element_text(size = 14),
