@@ -208,13 +208,37 @@ fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
   bind_cols(Cos2 = Cos2_scores) |> 
   left_join(SOCB_2019_habitat, by = "Species")
 
+# Boxplot of cos2 scores vs number of components
+fpca_output |> 
+  select(Species, starts_with("Cos2")) |> 
+  pivot_longer(-Species, names_to = "Order", values_to = "Value") |> 
+  separate(Order, c("Dummy","Order"), "_") |> 
+  select(-Dummy) |> 
+  filter(Order > 1) |> 
+  ggplot(aes(x = Order, y = Value)) +
+  geom_boxplot() +
+  geom_hline(yintercept = .75, colour = "orange", lty = 2, linewidth = 1.5) +
+  ylab("Cos2 Score") + 
+  xlab("Order of Approximation") +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 30, face = "bold"),
+        axis.title.x = element_text(size = 30, face = "bold"),
+        axis.text = element_text(size = 20),
+        legend.text = element_text(size = 14),
+        legend.position = "bottom",
+        legend.title=element_blank())
+
+"plots/Cos2_boxplot" |> 
+  paste0(".",figure_format) |> 
+  ggsave(width = 12, height =8)
+
 # Identify species with low cos2 scores
 removed_species <- fpca_output |> 
-  filter(Cos2_1 < cos2_tol) |> 
-  select(Species, Cos2_1) |> 
+  filter(Cos2_2 < cos2_tol) |> 
+  select(Species, Cos2_2) |> 
   mutate(Reason = "Cos2",
          Colour = "RoyalPurple",
-         Description = paste("Cos$^2$ score is",round(Cos2_1,2))) |> 
+         Description = paste("Cos$^2$ score is",round(Cos2_2,2))) |> 
   select(-starts_with("Cos2")) |> 
   bind_rows(removed_species)
 
@@ -265,7 +289,7 @@ mahal_dist <- function(M){
 }
 
 subdivide1 <- fpca_output |> 
-  filter(Cos2_1 > cos2_tol) |> 
+  filter(Cos2_2 > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
@@ -377,7 +401,7 @@ subdivide2 <- fpca_output |>
   filter(!is.na(Guild),
          !Singleton,
          !Outlier,
-         Cos2_1 > cos2_tol) |> 
+         Cos2_2 > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
