@@ -13,7 +13,8 @@ library(patchwork)
 library(tidyverse)
 
 # Set control parameters
-cos2_tol <- .75
+n_pc <- 3 # Number of components used in approximation
+cos2_tol <- -1 # Cos^2 score tolerance
 figure_format <- "jpg" # File format for saved figures: jpg or pdf.
 
 ###############################################################################
@@ -163,6 +164,32 @@ smooth_result <- smooth.basis(argvals = time_points,
 # Conduct FPCA 
 fpca_result <- pca.fd(smooth_result$fd, nharm = 42) # Perform FPCA
 
+# Plot harmonics
+harmonics <- eval.fd(time_points, fpca_result$harmonics) 
+
+harmonics[,1:4] |> 
+  as_tibble() |> 
+  add_column(Year = 1975:2016, .before = 1) |> 
+  pivot_longer(-Year, names_to = "PC", values_to = "Value") |> 
+  mutate(PC = str_sub(PC, start = 3)) |> 
+  ggplot(aes(x = Year, y = Value)) + 
+  geom_line() + 
+  geom_hline(yintercept = 0, lty = 2) + 
+  facet_wrap(vars(PC)) +
+  ylab("") +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 20),
+    axis.text.x = element_text(hjust = 1, size = 22),  # Increase x-axis text size
+    axis.text.y = element_text(size = 22),  # Increase y-axis text size
+    axis.title.x = element_text(size = 22),  # Increase x-axis title size
+    axis.title.y = element_text(size = 22),  # Increase y-axis title size
+    plot.title = element_text(size = 25, hjust = 0.5)  # Increase title size and center it
+  ) 
+
+
+
+
 # Scree plot
 scree_df <- tibble(pc = 1:42,
                    pve = fpca_result$varprop,
@@ -203,8 +230,7 @@ Cos2_scores <- (t(Explained_var)/Total_var) |>
 
 # Construct output data frame
 fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
-                      PC1 = fpca_result$scores[,1],
-                      PC2 = fpca_result$scores[,2]) |> 
+                      PC = fpca_result$scores[,1:n_pc]) |> 
   bind_cols(Cos2 = Cos2_scores) |> 
   left_join(SOCB_2019_habitat, by = "Species")
 
@@ -257,8 +283,6 @@ removed_species |>
   
 
 # Compute reconstructed trajectories based on first 2 PCs
-harmonics <- eval.fd(time_points, fpca_result$harmonics)
-
 fpca_mean <- eval.fd(time_points, fpca_result$meanfd) |> 
   as.vector()
 
@@ -274,12 +298,9 @@ SOCB_2019 <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2])) |>
 ##################################### Stage 2: Subdividing #####################################
 ################################################################################################
 
-mahal_dist <- function(M){
-  if(nrow(M) == 1){
-    return(NA)
-  }
-  if(nrow(M) == 2){
-    return(c(0,0))
+mahal_dist <- function(M, pc){
+  if(nrow(M) <= pc){
+    return(rep(0, nrow(M)))
   }
   else{
     m <- colMeans(M)
@@ -294,13 +315,13 @@ subdivide1 <- fpca_output |>
   group_map(\(guild_data,keys){
     # Extract guild name
     guild <- keys[[1]]
-    
+
     # Compute distance matrix
-    d <- dist(guild_data[, c("PC1", "PC2")])
+    d <- dist(guild_data[, "PC"])
     
     # Apply k-means clustering for each possible k
     max_k <- min(10, nrow(guild_data) - 1)
-    km_res <- lapply(2:max_k, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
+    km_res <- lapply(2:max_k, \(k) kmeans(guild_data[, "PC"], centers = k, nstart = 25))
     
     # Compute silhouette scores
     sil <- lapply(km_res, \(km) silhouette(km$cluster, d))
@@ -324,7 +345,7 @@ subdivide1 <- fpca_output |>
         clust |> 
           mutate(Cluster = keys[[1]],
                  Singleton = (n() == 1),
-                 Mahal = mahal_dist(clust |> select(PC1,PC2)))
+                 Mahal = mahal_dist(clust |> select(PC), n_pc))
       }) |> 
       bind_rows() |> 
       mutate(Outlier = Mahal > qchisq(0.95, df = 2))
@@ -408,11 +429,11 @@ subdivide2 <- fpca_output |>
     guild <- keys[[1]]
     
     # Compute distance matrix
-    d <- dist(guild_data[, c("PC1", "PC2")])
+    d <- dist(guild_data[, "PC"])
     
     # Apply k-means clustering for each possible k
     max_k <- min(10, nrow(guild_data) - 1)
-    km_res <- lapply(2:max_k, \(k) kmeans(guild_data[, c("PC1", "PC2")], centers = k, nstart = 25))
+    km_res <- lapply(2:max_k, \(k) kmeans(guild_data[, "PC"], centers = k, nstart = 25))
     
     # Compute silhouette scores
     sil <- lapply(km_res, \(km) silhouette(km$cluster, d))
@@ -445,12 +466,11 @@ final_clusters <- subdivide2 |>
 
 # Compute fits at cluster means
 fpca_means <- final_clusters |> 
-  group_by(Guild, Cluster) |> 
-  summarize(PC1 = mean(PC1),
-            PC2 = mean(PC2),
+  group_by(Guild, Cluster)  |> 
+  summarize(PC = t(apply(PC, 2, mean)),
             .groups = "keep") |> 
   reframe(year = 1975:2016,
-          Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean)
+          Mean = (harmonics[,1:n_pc] %*% t(PC) + fpca_mean)[,1])
 
 # Reorder the clusters
 cluster_order <- fpca_means |> 
@@ -482,7 +502,7 @@ fpca_means <- fpca_means |>
 
 # Plot clusters labelling outliers and singletons
 final_clusters |> 
-  ggplot(aes(x = PC1, y = PC2, color = factor(Cluster))) +
+  ggplot(aes(x = PC[,1], y = PC[,2], color = factor(Cluster))) +
   geom_point(size=2.5, alpha = 0.6) +
   geom_point(data = initial_clusters |> filter(Singleton | Outlier),
              color = "red", shape = 17, size = 4, show.legend = FALSE) +
@@ -513,15 +533,15 @@ final_clusters |>
   ggsave(width = 12, height = 8)
 
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, 3, NA, NA), # Aerial Insectivores
-               c(NA, NA, 4, 5, 6), # Birds of Prey
-               c(7, NA, 8, 9, 10), # Forest Birds
-               c(11, NA, 12, NA, NA), # Grassland Birds
-               c(13, 14, 15, 16, NA), # Other
-               c(NA, NA, 17, NA, 18), # Seabirds
-               c(19, 20, 21, NA, 22), # Shorebirds
-               c(NA, NA, 23, 24, 25), # Waterfowl
-               c(26, 27, NA, 28, 29)) |> # Wetland Birds
+layout <- list(c(1, 2, 3, NA, NA, NA), # Aerial Insectivores
+               c(NA, NA, 4, 5, NA, NA), # Birds of Prey
+               c(6, 7, 8, 9, 10, 11), # Forest Birds
+               c(12, NA, 13, NA, NA, NA), # Grassland Birds
+               c(14, 15, 16, 17, 18, NA), # Other
+               c(NA, NA, 19, NA, 20, NA), # Seabirds
+               c(21, 22, 23, NA, NA, NA), # Shorebirds
+               c(NA, NA, 24, 25, 26, 27), # Waterfowl
+               c(28, 29, NA, 30, 31, NA)) |> # Wetland Birds
   do.call(what = "rbind")
 
 final_clusters |> 
@@ -532,7 +552,9 @@ final_clusters |>
   geom_line(aes(group = Species), color = "orange", linewidth = 0.4) +
   geom_line(data = fpca_means, aes(x = year, y = Mean),
             color = "darkblue", linewidth = 1.5) +
-  facet_manual(~Subcluster, design = layout) +
+  #facet_manual(~Subcluster, design = layout) +
+  #facet_grid(Guild ~ Subcluster) + 
+  facet_wrap(vars(Subcluster))+
   labs(x = "Year", y = "Relative Abundance Function") +
   scale_x_continuous(breaks = seq(1975, 2016, by = 10)) +
   theme_minimal()+
@@ -594,8 +616,8 @@ while (length(clusters_list) > 1) {
   # Compute pairwise distances between clusters
   for (i in 1:(n - 1)) {
     for (j in (i + 1):n) {
-      sp1 <- clusters_list[[ cluster_names[i] ]]$species[, c("PC1", "PC2"), drop = FALSE]
-      sp2 <- clusters_list[[ cluster_names[j] ]]$species[, c("PC1", "PC2"), drop = FALSE]
+      sp1 <- clusters_list[[ cluster_names[i] ]]$species[, "PC", drop = FALSE]
+      sp2 <- clusters_list[[ cluster_names[j] ]]$species[, "PC", drop = FALSE]
       
       if (nrow(sp1) > 0 & nrow(sp2) > 0) {
         # Max pairwise distance between clusters (complete linkage)
@@ -743,12 +765,12 @@ for(i in 1:length(clusters)){
   
   centroids <- PC_points[[merge]] |> 
     group_by(CurrentCluster, Merge) |> 
-    summarize(PC1 = mean(PC1),PC2 = mean(PC2)) |> 
+    summarise(PC = t(apply(PC, 2, mean))) |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster)))
   
   PC_points[[merge]] |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster))) |> 
-    ggplot(aes(x = PC1, y = PC2, color = factor(label))) +
+    ggplot(aes(x = PC[,1], y = PC[,2], color = factor(label))) +
     # Plot individual points
     geom_vline(xintercept = 0) + 
     geom_hline(yintercept = 0) +
