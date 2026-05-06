@@ -13,7 +13,7 @@ library(patchwork)
 library(tidyverse)
 
 # Set control parameters
-n_pc <- 3 # Number of components used in approximation
+n_pc <- 4 # Number of components used in approximation
 cos2_tol <- -1 # Cos^2 score tolerance
 figure_export <- FALSE # If TRUE, then save figures to disk
 figure_format <- "jpg" # File format for saved figures: jpg or pdf.
@@ -827,7 +827,7 @@ for(i in 1:length(clusters)){
   rejoined_means <- centroids |> 
     group_by(CurrentCluster, Merge) |> 
     reframe(year = 1975:2016,
-            Mean = PC1 * harmonics[,1] + PC2 * harmonics[,2] + fpca_mean) |> 
+            Mean = (harmonics[,1:n_pc] %*% t(PC) + fpca_mean)[,1]) |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge)))
   
   group_colors <- c("Wetland Birds" = "#1f77b4",
