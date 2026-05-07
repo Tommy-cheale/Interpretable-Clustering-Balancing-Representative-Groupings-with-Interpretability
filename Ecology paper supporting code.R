@@ -356,7 +356,7 @@ subdivide1 <- fpca_output |>
                  Mahal = mahal_dist(clust |> select(PC), n_pc))
       }) |> 
       bind_rows() |> 
-      mutate(Outlier = Mahal > qchisq(0.95, df = 2))
+      mutate(Outlier = Mahal > qchisq(0.95, df = n_pc))
     
     
     list(output = output,
