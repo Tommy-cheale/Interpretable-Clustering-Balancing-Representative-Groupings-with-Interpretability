@@ -290,11 +290,11 @@ removed_species |>
   write_csv("output/removed_species.tex", col_names = FALSE)
   
 
-# Compute reconstructed trajectories based on first 2 PCs
+# Compute reconstructed trajectories
 fpca_mean <- eval.fd(time_points, fpca_result$meanfd) |> 
   as.vector()
 
-SOCB_2019 <- (fpca_result$scores[,1:2] %*% t(harmonics[,1:2])) |> 
+SOCB_2019 <- (fpca_result$scores[,1:n_pc] %*% t(harmonics[,1:n_pc])) |> 
   as_tibble(.name_repair = "minimal") |> 
   set_names(1975:2016) |> 
   add_column(Species = SOCB_2019_habitat |> pull("Species"), .before = 1) |> 
