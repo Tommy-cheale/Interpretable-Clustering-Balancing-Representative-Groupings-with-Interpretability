@@ -793,9 +793,6 @@ for(i in 1:length(clusters)){
     geom_vline(xintercept = 0) + 
     geom_hline(yintercept = 0) +
     geom_point(size = 2, alpha = 0.7) +
-    geom_point(data = PC_points[[merge]] |> filter(Species == "Franklin's Gull"), color = "red", shape = 17, size = 4) + 
-    geom_text(data = PC_points[[merge]] |> filter(Species == "Franklin's Gull"),
-              aes(label = Species), color = "red", vjust = 2.05, hjust = 0.5, size = 4.75, , show.legend = FALSE) +
     # Plot centroids as squares in the same color
     geom_point(data = centroids, shape = 15, size = 5) +
     # Ensure consistent colors
@@ -858,8 +855,7 @@ for(i in 1:length(clusters)){
           axis.title.x = element_text(size = 30, face = "bold"),
           legend.text = element_text(size = 14),
           legend.position = "bottom",
-          legend.title=element_blank()) +
-    geom_line(data = join_data |> filter(Species == "Franklin's Gull"), colour ="red", lty = 2, linewidth = 1.5)
+          legend.title=element_blank())
   
   if(figure_export){
     paste0("plots/",cluster,"_cluster_line", ".",figure_format) |> 
