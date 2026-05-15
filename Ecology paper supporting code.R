@@ -191,9 +191,6 @@ harmonics[,1:4] |>
     plot.title = element_text(size = 25, hjust = 0.5)  # Increase title size and center it
   ) 
 
-
-
-
 # Scree plot
 scree_df <- tibble(pc = 1:42,
                    pve = fpca_result$varprop,
