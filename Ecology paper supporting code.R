@@ -286,7 +286,6 @@ removed_species |>
   select(Text) |> 
   write_csv("output/removed_species.tex", col_names = FALSE)
   
-
 # Compute reconstructed trajectories
 fpca_mean <- eval.fd(time_points, fpca_result$meanfd) |> 
   as.vector()
@@ -737,7 +736,7 @@ merge_df |>
          Diff = Height1 - Height) |> 
   arrange(desc(Diff))
 
-merges <-  c(24,15)
+merges <-  c(24,18)
 clusters <- nrow(merge_df) - merges +1 
 
 # Construct dendrogram
