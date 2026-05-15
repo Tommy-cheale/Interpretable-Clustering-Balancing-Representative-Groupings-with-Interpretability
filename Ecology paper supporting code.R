@@ -480,7 +480,7 @@ fpca_means <- final_clusters |>
   summarize(PC = t(apply(PC, 2, mean)),
             .groups = "keep") |> 
   reframe(year = 1975:2016,
-          Mean = (harmonics[,1:n_pc] %*% t(PC) + fpca_mean)[,1])
+          Mean = (harmonics[,1:n_pc] %*% PC[,1:n_pc] + fpca_mean)[,1])
 
 # Reorder the clusters
 cluster_order <- fpca_means |> 
@@ -823,7 +823,7 @@ for(i in 1:length(clusters)){
   rejoined_means <- centroids |> 
     group_by(CurrentCluster, Merge) |> 
     reframe(year = 1975:2016,
-            Mean = (harmonics[,1:n_pc] %*% t(PC) + fpca_mean)[,1]) |> 
+            Mean = (harmonics[,1:n_pc] %*% PC[,1:n_pc] + fpca_mean)[,1]) |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge)))
   
   group_colors <- c("Wetland Birds" = "#1f77b4",
