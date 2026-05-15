@@ -246,7 +246,8 @@ fpca_output |>
   filter(Order > 1) |> 
   ggplot(aes(x = Order, y = Value)) +
   geom_boxplot() +
-  geom_hline(yintercept = .75, colour = "orange", lty = 2, linewidth = 1.5) +
+  geom_hline(yintercept = cos2_tol, colour = "orange", lty = 2, linewidth = 1.5) +
+  ylim(c(0,1)) + 
   ylab("Cos2 Score") + 
   xlab("Order of Approximation") +
   theme_minimal() +
@@ -544,14 +545,14 @@ if(figure_export){
 }
 
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, 3, NA, NA, NA), # Aerial Insectivores
-               c(NA, NA, 4, 5, NA, NA), # Birds of Prey
+layout <- list(c(1, 2, NA, 3, NA, NA), # Aerial Insectivores
+               c(NA, NA, NA, 4,  NA, 5), # Birds of Prey
                c(6, 7, 8, 9, 10, 11), # Forest Birds
                c(12, NA, 13, NA, NA, NA), # Grassland Birds
-               c(14, 15, 16, 17, 18, NA), # Other
+               c(14, NA, 15, 16, 17, 18), # Other
                c(NA, NA, 19, NA, 20, NA), # Seabirds
-               c(21, 22, 23, NA, NA, NA), # Shorebirds
-               c(NA, NA, 24, 25, 26, 27), # Waterfowl
+               c(21, NA, 22, NA, 23, NA), # Shorebirds
+               c(24, NA, NA, 25, 26, 27), # Waterfowl
                c(28, 29, NA, 30, 31, NA)) |> # Wetland Birds
   do.call(what = "rbind")
 
@@ -563,9 +564,8 @@ final_clusters |>
   geom_line(aes(group = Species), color = "orange", linewidth = 0.4) +
   geom_line(data = fpca_means, aes(x = year, y = Mean),
             color = "darkblue", linewidth = 1.5) +
-  #facet_manual(~Subcluster, design = layout) +
-  #facet_grid(Guild ~ Subcluster) + 
-  facet_wrap(vars(Subcluster))+
+  facet_manual(~Subcluster, design = layout) +
+  #facet_wrap(vars(Subcluster))+
   labs(x = "Year", y = "Relative Abundance Function") +
   scale_x_continuous(breaks = seq(1975, 2016, by = 10)) +
   theme_minimal()+
@@ -737,7 +737,7 @@ merge_df |>
          Diff = Height1 - Height) |> 
   arrange(desc(Diff))
 
-merges <-  c(26,18)
+merges <-  c(24,15)
 clusters <- nrow(merge_df) - merges +1 
 
 # Construct dendrogram
@@ -804,6 +804,8 @@ for(i in 1:length(clusters)){
       subtitle = paste("Height:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
       color = "Cluster (Lineage)",
     ) +
+    xlab("FPCA1") + 
+    ylab("FPCA2") +
     theme(
       legend.text = element_text(size = 14),
       legend.title = element_text(size = 14),
