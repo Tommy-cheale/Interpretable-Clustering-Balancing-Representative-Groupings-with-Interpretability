@@ -227,10 +227,6 @@ Explained_var <- fpca_result$scores[,1:5]^2 |>
 Total_var <- fpca_result$scores^2 |> 
   apply(1,sum)
 
-Cos2_scores <- () |> 
-  as_tibble() |> 
-  set_names(paste0("Cos2_",1:5))
-
 # Construct output data frame
 fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
                       PC = fpca_result$scores[,1:5]) |> 
