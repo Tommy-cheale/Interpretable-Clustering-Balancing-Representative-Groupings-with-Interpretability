@@ -227,23 +227,22 @@ Explained_var <- fpca_result$scores[,1:5]^2 |>
 Total_var <- fpca_result$scores^2 |> 
   apply(1,sum)
 
-Cos2_scores <- (t(Explained_var)/Total_var) |> 
+Cos2_scores <- () |> 
   as_tibble() |> 
   set_names(paste0("Cos2_",1:5))
 
 # Construct output data frame
 fpca_output <- tibble(Species = colnames(SOCB_2019_max_rescaled),
-                      PC = fpca_result$scores[,1:n_pc]) |> 
-  bind_cols(Cos2 = Cos2_scores) |> 
+                      PC = fpca_result$scores[,1:5]) |> 
+  bind_cols(Cos2 = t(Explained_var)/Total_var) |> 
   left_join(SOCB_2019_habitat, by = "Species")
 
 # Boxplot of cos2 scores vs number of components
 fpca_output |> 
-  select(Species, starts_with("Cos2")) |> 
-  pivot_longer(-Species, names_to = "Order", values_to = "Value") |> 
-  separate(Order, c("Dummy","Order"), "_") |> 
-  select(-Dummy) |> 
-  filter(Order > 1) |> 
+  select(Species, Cos2) |> 
+  group_by(Species) |> 
+  reframe(Order = factor(2:5),
+          Value = t(Cos2)[2:5,1]) |> 
   ggplot(aes(x = Order, y = Value)) +
   geom_boxplot() +
   geom_hline(yintercept = cos2_tol, colour = "orange", lty = 2, linewidth = 1.5) +
@@ -258,7 +257,7 @@ fpca_output |>
         legend.position = "bottom",
         legend.title=element_blank())
 
-if(figure_export){
+if(figure_export)order()if(figure_export){
   "plots/Cos2_boxplot" |> 
     paste0(".",figure_format) |> 
     ggsave(width = 12, height =8)
@@ -266,11 +265,11 @@ if(figure_export){
 
 # Identify species with low cos2 scores
 removed_species <- fpca_output |> 
-  filter(Cos2_2 < cos2_tol) |> 
-  select(Species, Cos2_2) |> 
+  filter(Cos2[,n_pc] < cos2_tol) |> 
+  select(Species, Cos2) |> 
   mutate(Reason = "Cos2",
          Colour = "RoyalPurple",
-         Description = paste("Cos$^2$ score is",round(Cos2_2,2))) |> 
+         Description = paste("Cos$^2$ score is",format(round(Cos2[,n_pc],2), nsmall = 2))) |> 
   select(-starts_with("Cos2")) |> 
   bind_rows(removed_species)
 
@@ -316,7 +315,7 @@ mahal_dist <- function(M, pc){
 }
 
 subdivide1 <- fpca_output |> 
-  filter(Cos2_2 > cos2_tol) |> 
+  filter(Cos2[,n_pc] > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
@@ -432,7 +431,7 @@ subdivide2 <- fpca_output |>
   filter(!is.na(Guild),
          !Singleton,
          !Outlier,
-         Cos2_2 > cos2_tol) |> 
+         Cos2[,n_pc] > cos2_tol) |> 
   group_by(Guild) |> 
   group_map(\(guild_data,keys){
     # Extract guild name
