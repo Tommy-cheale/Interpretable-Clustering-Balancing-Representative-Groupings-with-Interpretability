@@ -14,9 +14,9 @@ library(tidyverse)
 
 # Set control parameters
 n_pc <- 4 # Number of components used in approximation
-cos2_tol <- -1 # Cos^2 score tolerance
-figure_export <- FALSE # If TRUE, then save figures to disk
-figure_format <- "jpg" # File format for saved figures: jpg or pdf.
+cos2_tol <- .75 # Cos^2 score tolerance
+figure_export <- TRUE # If TRUE, then save figures to disk
+figure_format <- "pdf" # File format for saved figures: jpg or pdf.
 
 ###############################################################################
 ################################ Data Processing ##############################
