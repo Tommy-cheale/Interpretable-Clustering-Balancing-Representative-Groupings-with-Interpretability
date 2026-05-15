@@ -392,16 +392,11 @@ initial_clusters <- subdivide1 |>
 initial_clusters |> 
   filter(Singleton | Outlier) |> 
   left_join(SOCB_2019, by = c("Species")) |> 
+  mutate(Species = paste0(Species, " (",format(round(Cos2[,n_pc], 2), nsmall = 2),")")) |>  
   ggplot(aes(x = year, y = mr_index, color = Species)) +
   geom_line(linewidth = 1.5) +
   geom_line(mapping = aes(x = year, y = fit), lty = 2,linewidth = 1.5) +
   facet_wrap(~ Species, ncol = 2, scales = "fixed") +
-  scale_color_manual(values = c(
-    "Evening Grosbeak"   = "steelblue",
-    "Rusty Blackbird"    = "darkgreen",
-    "Trumpeter Swan"     = "firebrick",
-    "Eared Grebe"  = "purple"
-  )) +
   labs(
     x = "Year",
     y = "Max-Rescaled Abundance"
@@ -409,7 +404,7 @@ initial_clusters |>
   theme_minimal(base_size = 22) +  # makes everything bigger by default
   theme(
     legend.position = "none",
-    strip.text = element_text(size = 25, face = "bold"),   # facet titles
+    strip.text = element_text(size = 15, face = "bold"),   # facet titles
     axis.title = element_text(size = 24, face = "bold"),   # axis labels
     axis.text = element_text(size = 20),                   # tick labels
     plot.title = element_text(size = 28, face = "bold", hjust = 0.5)
@@ -418,7 +413,7 @@ initial_clusters |>
 if(figure_export){
   "plots/Removed_Out" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height = 6)
+    ggsave(width = 12, height = 8)
 }
 
 # Repeat clustering excluding outliers and singletons
