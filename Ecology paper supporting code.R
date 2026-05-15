@@ -253,7 +253,7 @@ fpca_output |>
         legend.position = "bottom",
         legend.title=element_blank())
 
-if(figure_export)order()if(figure_export){
+if(figure_export){
   "plots/Cos2_boxplot" |> 
     paste0(".",figure_format) |> 
     ggsave(width = 12, height =8)
