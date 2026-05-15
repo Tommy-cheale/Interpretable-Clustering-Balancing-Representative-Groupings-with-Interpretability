@@ -501,13 +501,24 @@ fpca_means <- fpca_means |>
   mutate(Subcluster = paste(Guild, Cluster)) 
 
 # Plot clusters labelling outliers and singletons
+outliers <- initial_clusters |> 
+  filter(Singleton | Outlier) |> 
+  group_by(Guild) |> 
+  arrange((PC[,2] > 0), (-1)^(PC[,2] > 0) * PC[,1]) |> 
+  mutate(lab_y = -2.5 + 2.5 * (row_number()  - 1)/max(1,n() - 1) +
+           2.5 * (row_number()>mean(row_number())))
+
 final_clusters |> 
   ggplot(aes(x = PC[,1], y = PC[,2], color = factor(Cluster))) +
   geom_point(size=2.5, alpha = 0.6) +
-  geom_point(data = initial_clusters |> filter(Singleton | Outlier),
+  geom_point(data = outliers,
              color = "red", shape = 17, size = 4, show.legend = FALSE) +
-  geom_text(data = initial_clusters |> filter(Singleton | Outlier),
-            aes(label = Species), color = "red", vjust = -1.05, hjust = 0.58, size = 4.75, , show.legend = FALSE) +
+  geom_text(data = outliers,
+            aes(label = Species, x = 1, y = lab_y), color = "red", 
+            vjust = 0, hjust = 0, size = 3, show.legend = FALSE) +
+  geom_segment(data = outliers, 
+               aes(x = PC[,1], xend = .9, y = PC[,2], yend = lab_y),
+               color = "red") +
   facet_wrap(~ Guild) +
   theme_minimal() +
   labs(x = "FPC1",
@@ -524,7 +535,7 @@ final_clusters |>
     legend.position = "none",  # This removes the legend
     strip.text = element_text(size = 25)) + 
   ylim(c(-3.5,3.5)) +
-  xlim(c(-3.5,3.5)) +
+  xlim(c(-3.5,4)) +
   geom_vline(xintercept = 0) + 
   geom_hline(yintercept = 0)
 
