@@ -308,6 +308,7 @@ mahal_dist <- function(M, pc){
     return(rep(0, nrow(M)))
   }
   else{
+    M <- M[,1:pc]
     m <- colMeans(M)
     V <- var(M)
     mahalanobis(M, m, V)
@@ -350,7 +351,7 @@ subdivide1 <- fpca_output |>
         clust |> 
           mutate(Cluster = keys[[1]],
                  Singleton = (n() == 1),
-                 Mahal = mahal_dist(clust |> select(PC), n_pc))
+                 Mahal = clust |> pull(PC) |> mahal_dist(n_pc))
       }) |> 
       bind_rows() |> 
       mutate(Outlier = Mahal > qchisq(0.95, df = n_pc))
