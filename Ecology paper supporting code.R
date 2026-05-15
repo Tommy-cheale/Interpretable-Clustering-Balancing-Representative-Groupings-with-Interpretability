@@ -545,15 +545,15 @@ if(figure_export){
 }
 
 # Plot original trajectories by subcluster
-layout <- list(c(1, 2, NA, 3, NA, NA), # Aerial Insectivores
-               c(NA, NA, NA, 4,  NA, 5), # Birds of Prey
-               c(6, 7, 8, 9, 10, 11), # Forest Birds
-               c(12, NA, 13, NA, NA, NA), # Grassland Birds
-               c(14, NA, 15, 16, 17, 18), # Other
-               c(NA, NA, 19, NA, 20, NA), # Seabirds
-               c(21, NA, 22, NA, 23, NA), # Shorebirds
-               c(24, NA, NA, 25, 26, 27), # Waterfowl
-               c(28, 29, NA, 30, 31, NA)) |> # Wetland Birds
+layout <- list(c( 1,  1,  2,  2,  3,  3, NA, NA, NA, NA), # Aerial Insectivores
+               c(NA, NA, NA, NA,  4,  4, NA, 5,   5, NA), # Birds of Prey
+               c(NA,  6,  6, NA,  7,  7, NA,  8,  8, NA), # Forest Birds
+               c(NA,  9,  9, NA, 10, 10, NA, NA, NA, NA), # Grassland Birds
+               c(11, 11, 12, 12, 13, 13, NA, 14, 14, NA), # Other
+               c(NA, NA, NA, NA, 15, 15, NA, 16, 16, NA), # Seabirds
+               c(NA, 17, 17, NA, 18, 18, NA, 19, 19, NA), # Shorebirds
+               c(NA, 20, 20, NA, 21, 21, 22, 22, 23, 23), # Waterfowl
+               c(NA, 24, 24, NA, 25, 25, 26, 26, 27, 27)) |> # Wetland Birds
   do.call(what = "rbind")
 
 final_clusters |> 
