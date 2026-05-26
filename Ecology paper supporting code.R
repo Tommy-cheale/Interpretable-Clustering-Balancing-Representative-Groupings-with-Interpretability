@@ -366,7 +366,7 @@ subdivide1 |>
   ggplot(aes(x = k, y = avg_sil)) +
   geom_line() +
   geom_point(size = 3) +
-  labs(x = "Number of Clusters (k)",
+  labs(x = "Number of Subgroups (k)",
        y = "Average Silhouette Score") +
   theme_minimal()+
   facet_wrap(vars(Guild)) +
