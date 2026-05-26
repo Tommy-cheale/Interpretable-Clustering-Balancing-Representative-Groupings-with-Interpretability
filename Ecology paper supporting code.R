@@ -821,11 +821,18 @@ for(i in 1:length(clusters)){
       ggsave(width = 12, height = 6)
   }
   
+  # Compute centroid trajectories and order by overall difference
   rejoined_means <- centroids |> 
     group_by(CurrentCluster, Merge) |> 
     reframe(year = 1975:2016,
             Mean = (harmonics[,1:n_pc] %*% PC[,1:n_pc] + fpca_mean)[,1]) |> 
-    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge)))
+    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge))) |> 
+    group_by(label) |> 
+    mutate(Diff = Mean[42]-Mean[1]) |> 
+    ungroup() |> 
+    arrange(Diff) |> 
+    mutate(label1 = factor(Diff, levels = unique(Diff), labels = unique(label))) 
+    
   
   group_colors <- c("Wetland Birds" = "#1f77b4",
                     "Shorebirds" = "#ff7f0e",
@@ -840,14 +847,15 @@ for(i in 1:length(clusters)){
     select(Species, Cluster, Subcluster, Merge, CurrentCluster) |> 
     right_join(SOCB_2019, by = "Species") |> 
     filter(!is.na(CurrentCluster)) |> 
-    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ", Merge)))
+    mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ", Merge))) |> 
+    left_join(select(rejoined_means, label, label1) |> distinct(), by = "label")
   
   join_data |> 
     ggplot(aes(x = year, y = mr_index)) +
     geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
     geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
     scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
-    facet_wrap(vars(label), nrow = (cluster - 1) %/% 4 + 1) +
+    facet_wrap(vars(label1), nrow = (cluster - 1) %/% 4 + 1) +
     labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
     theme_minimal() +
     theme(strip.text = element_text(size=16, face = "bold"),
