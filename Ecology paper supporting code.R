@@ -142,16 +142,17 @@ SOCB_2019 |>
     x = "Year",
     color = "Guild"
   ) + 
+  ggtitle("Figure 1") +
   theme_minimal() +
   theme(legend.position = "none",
         strip.text = element_text(size = 25),
-        plot.title = element_text(size = 35, face = "bold"),        # main title
+        plot.title = element_text(size = 25, face = "bold"),        # main title
         axis.title = element_text(size = 25, face = "bold"),        # x and y axis titles
         axis.text = element_text(size = 18)  
   )
 
 if(figure_export){
-  "plots/Examples" |> 
+  "plots/figure_1_examples" |> 
     paste0(".",figure_format) |> 
     ggsave(width = 12, height =8)
 }
@@ -569,15 +570,17 @@ final_clusters |>
   #facet_wrap(vars(Subcluster))+
   labs(x = "Year", y = "Relative Abundance Function") +
   scale_x_continuous(breaks = seq(1975, 2016, by = 10)) +
+  ggtitle("Figure 3") +
   theme_minimal()+
   theme(
     strip.text = element_text(size=10, face = "bold"),
+    plot.title = element_text(size = 25, face = "bold"),        # main title
     axis.title.y = element_text(size=25 ),
     axis.text = element_text(size = 11, face="bold"),
     axis.title.x = element_text(size=30 ))
 
 if(figure_export){
-  "plots/All_Subgroups" |> 
+  "plots/figure_3_all_subgroups" |> 
     paste0(".",figure_format) |> 
     ggsave(width = 12, height = 8)
 }
@@ -743,7 +746,7 @@ clusters <- nrow(merge_df) - merges +1
 
 # Construct dendrogram
 
-line_heights <- (merge_df$Height[merges] + merge_df$Height[merges + 1])/2
+line_heights <- .9 * merge_df$Height[merges] + .1 * merge_df$Height[merges + 1]
 
 ggplot(segment(dendro_data)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
@@ -751,8 +754,10 @@ ggplot(segment(dendro_data)) +
             aes(x = x, y = -label_offset, label = label),
             hjust = -0, vjust=-0.8 , angle = 90, size = 4.5) +
   labs(x = "Sub-cluster", y = "Height") +
+  ggtitle("Figure 4") +
   theme_minimal(base_size = 16) +
   theme(
+    plot.title = element_text(size = 25, face = "bold"),        # main title
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
     axis.title.x = element_text(size = 18, face = "bold"),
@@ -767,12 +772,14 @@ ggplot(segment(dendro_data)) +
 geom_hline(yintercept = line_heights, colour = c("blue","orange"), linetype = "dashed", linewidth = 1)
 
 if(figure_export){
-  "plots/Dend" |> 
+  "plots/figure_4_dendrogram" |> 
     paste0(".",figure_format) |> 
     ggsave(width = 12, height = 8)
 }
 
 # Plot results for the selected solutions
+
+fig_num <- 5
 
 for(i in 1:length(clusters)){
 
@@ -784,7 +791,7 @@ for(i in 1:length(clusters)){
     summarise(PC = t(apply(PC, 2, mean))) |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster)))
   
-  PC_points[[merge]] |> 
+  plot1 <- PC_points[[merge]] |> 
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ",Merge, ": ",CurrentCluster))) |> 
     ggplot(aes(x = PC[,1], y = PC[,2], color = factor(label))) +
     # Plot individual points
@@ -807,7 +814,9 @@ for(i in 1:length(clusters)){
     ) +
     xlab("FPCA1") + 
     ylab("FPCA2") +
+    ggtitle(paste("Figure", fig_num + i - 1)) +
     theme(
+      plot.title = element_text(size = 25, face = "bold"),        # main title
       legend.text = element_text(size = 14),
       legend.title = element_text(size = 14),
       axis.title.x = element_text(size=18, face="bold"),
@@ -816,11 +825,6 @@ for(i in 1:length(clusters)){
     )+
     scale_color_discrete(labels = function(x) str_wrap(x, width = 67))
 
-  if(figure_export){  
-    paste0("plots/",cluster,"_cluster_scatter",".",figure_format) |> 
-      ggsave(width = 12, height = 6)
-  }
-  
   # Compute centroid trajectories and order by overall difference
   rejoined_means <- centroids |> 
     group_by(CurrentCluster, Merge) |> 
@@ -850,7 +854,7 @@ for(i in 1:length(clusters)){
     mutate(label = ifelse(Merge == 0, CurrentCluster, paste0("Merge ", Merge))) |> 
     left_join(select(rejoined_means, label, label1) |> distinct(), by = "label")
   
-  join_data |> 
+  plot2 <- join_data |> 
     ggplot(aes(x = year, y = mr_index)) +
     geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
     geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
@@ -859,14 +863,16 @@ for(i in 1:length(clusters)){
     labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
     theme_minimal() +
     theme(strip.text = element_text(size=16, face = "bold"),
-          axis.title.y = element_text(size = 30, face = "bold"),
-          axis.title.x = element_text(size = 30, face = "bold"),
+          axis.title.y = element_text(size = 18, face = "bold"),
+          axis.title.x = element_text(size = 18, face = "bold"),
           legend.text = element_text(size = 14),
           legend.position = "bottom",
           legend.title=element_blank())
   
+  free(plot1) / plot2
+  
   if(figure_export){
-    paste0("plots/",cluster,"_cluster_line", ".",figure_format) |> 
+    paste0("plots/figure_",fig_num + i -1,"_",cluster,"_cluster_solution", ".",figure_format) |> 
       ggsave(width = 12, height = 6 + 3 * (clusters == 8))
   }
 }
