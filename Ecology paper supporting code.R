@@ -524,7 +524,7 @@ final_clusters |>
   theme_minimal() +
   labs(x = "FPC1",
        y = "FPC2",
-       color = "Sub-Cluster")+
+       color = "Subgroup")+
   theme(
     axis.title.x = element_text(size = 30),  # Increase x-axis title size
     axis.title.y = element_text(size = 30),  # Increase y-axis title size
@@ -753,7 +753,7 @@ ggplot(segment(dendro_data)) +
   geom_text(data = label(dendro_data),
             aes(x = x, y = -label_offset, label = label),
             hjust = -0, vjust=-0.8 , angle = 90, size = 4.5) +
-  labs(x = "Sub-cluster", y = "Height") +
+  labs(x = "Subgroup", y = "Height") +
   ggtitle("Figure 4") +
   theme_minimal(base_size = 16) +
   theme(
@@ -765,6 +765,7 @@ ggplot(segment(dendro_data)) +
     axis.text.y = element_text(size = 12),
     plot.margin = margin(9, 40, 10, 10),
   ) +
+  ggtitle("Figure 4") +
   geom_text(data = merge_labels_df,
             aes(x = x, y = y - (label_offset*0.2), label = label),
             color = "blue", size = 4, fontface = "bold")+
@@ -812,8 +813,8 @@ for(i in 1:length(clusters)){
       subtitle = paste("Height:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
       color = "Cluster (Lineage)",
     ) +
-    xlab("FPCA1") + 
-    ylab("FPCA2") +
+    xlab("FPC1") + 
+    ylab("FPC2") +
     ggtitle(paste("Figure", fig_num + i - 1)) +
     theme(
       plot.title = element_text(size = 25, face = "bold"),        # main title
@@ -869,10 +870,10 @@ for(i in 1:length(clusters)){
           legend.position = "bottom",
           legend.title=element_blank())
   
-  free(plot1) / plot2
+  free(plot1) / plot2 + plot_layout(heights = c(6,4))
   
   if(figure_export){
     paste0("plots/figure_",fig_num + i -1,"_",cluster,"_cluster_solution", ".",figure_format) |> 
-      ggsave(width = 12, height = 6 + 3 * (clusters == 8))
+      ggsave(width = 12, height = 10)
   }
 }
