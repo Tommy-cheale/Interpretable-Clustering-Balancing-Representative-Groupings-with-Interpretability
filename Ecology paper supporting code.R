@@ -15,8 +15,20 @@ library(tidyverse)
 # Set control parameters
 n_pc <- 4 # Number of components used in approximation
 cos2_tol <- .75 # Cos^2 score tolerance
+
+###############################################################################
+################################ Figure Setup  ################################
+###############################################################################
+
 figure_export <- TRUE # If TRUE, then save figures to disk
 figure_format <- "pdf" # File format for saved figures: jpg or pdf.
+
+# Set ggplot2 theme to match Ecology requirements
+theme_set(theme_minimal() +
+            theme(strip.text = element_text(size = 8, face = "bold"), # Subplot labels
+                  plot.title = element_text(size = 10),        # Main title
+                  axis.title = element_text(size = 9),        # x and y axis titles
+                  axis.text = element_text(size = 7)))  # Axis tick labels
 
 ###############################################################################
 ################################ Data Processing ##############################
@@ -141,20 +153,13 @@ SOCB_2019 |>
     y = "Rescaled Annual Abundance",
     x = "Year",
     color = "Guild"
-  ) + 
-  ggtitle("Figure 1") +
-  theme_minimal() +
-  theme(legend.position = "none",
-        strip.text = element_text(size = 25),
-        plot.title = element_text(size = 25, face = "bold"),        # main title
-        axis.title = element_text(size = 25, face = "bold"),        # x and y axis titles
-        axis.text = element_text(size = 18)  
-  )
+  ) +
+  theme(legend.position = "none") #+ ggtitle("Figure 1") 
 
 if(figure_export){
   "plots/figure_1_examples" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height =8)
+    ggsave(width = 15, height =6, units = "cm")
 }
 
 ###############################################################################
@@ -204,21 +209,13 @@ scree_df |>
   geom_line(aes(y = cum_pve, group = 1), color = "darkgreen", linewidth = 1) +
   geom_point(aes(y = cum_pve), color = "darkgreen", size = 3, shape = 17) +
   labs(x = "Functional Principal Component",
-       y = "Proportion of Variance Explained") +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(hjust = 1, size = 22),  # Increase x-axis text size
-    axis.text.y = element_text(size = 22),  # Increase y-axis text size
-    axis.title.x = element_text(size = 22),  # Increase x-axis title size
-    axis.title.y = element_text(size = 22),  # Increase y-axis title size
-    plot.title = element_text(size = 25, hjust = 0.5)  # Increase title size and center it
-  ) +
+       y = "Variance Explained") +
   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Cumulative Variance"))
 
 if(figure_export){
   "plots/Scree" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height = 8)
+    ggsave(width = 8.5, height = 4, units = "cm")
 }
 
 # Compute Cos2 scores 
@@ -245,19 +242,12 @@ fpca_output |>
   geom_hline(yintercept = cos2_tol, colour = "orange", lty = 2, linewidth = 1.5) +
   ylim(c(0,1)) + 
   ylab("Cos2 Score") + 
-  xlab("Order of Approximation") +
-  theme_minimal() +
-  theme(axis.title.y = element_text(size = 30, face = "bold"),
-        axis.title.x = element_text(size = 30, face = "bold"),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 14),
-        legend.position = "bottom",
-        legend.title=element_blank())
+  xlab("Order of Approximation") 
 
 if(figure_export){
   "plots/Cos2_boxplot" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height =8)
+    ggsave(width = 8.5, height = 5, units = "cm")
 }
 
 # Identify species with low cos2 scores
@@ -371,17 +361,12 @@ subdivide1 |>
        y = "Average Silhouette Score") +
   theme_minimal()+
   facet_wrap(vars(Guild)) +
-  scale_x_continuous(limits = c(1, 10), breaks = 1:10) +
-  theme(
-    axis.title.x = element_text(size = 20),  # Increase x-axis title size
-    axis.title.y = element_text(size = 20),  # Increase y-axis title size
-    plot.title = element_text(size = 35, hjust = 0.5, face = "bold"),  # Increase title size and center it
-    strip.text = element_text(size = 25))
+  scale_x_continuous(limits = c(1, 10), breaks = 1:10)
 
 if(figure_export){
   "plots/Elbow" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height =8)
+    ggsave(width = 8.5, height =5, units = "cm")
 }
 
 # Extract data on clusters for all guilds
@@ -395,26 +380,19 @@ initial_clusters |>
   left_join(SOCB_2019, by = c("Species")) |> 
   mutate(Species = paste0(Species, " (",format(round(Cos2[,n_pc], 2), nsmall = 2),")")) |>  
   ggplot(aes(x = year, y = mr_index, color = Species)) +
-  geom_line(linewidth = 1.5) +
-  geom_line(mapping = aes(x = year, y = fit), lty = 2,linewidth = 1.5) +
+  geom_line() +
+  geom_line(mapping = aes(x = year, y = fit), lty = 2) +
   facet_wrap(~ Species, ncol = 2, scales = "fixed") +
   labs(
     x = "Year",
     y = "Max-Rescaled Abundance"
   ) +
-  theme_minimal(base_size = 22) +  # makes everything bigger by default
-  theme(
-    legend.position = "none",
-    strip.text = element_text(size = 15, face = "bold"),   # facet titles
-    axis.title = element_text(size = 24, face = "bold"),   # axis labels
-    axis.text = element_text(size = 20),                   # tick labels
-    plot.title = element_text(size = 28, face = "bold", hjust = 0.5)
-  )
+  theme(legend.position = "none")
 
 if(figure_export){
   "plots/Removed_Out" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height = 8)
+    ggsave(width = 15, height = 10, units = "cm")
 }
 
 # Repeat clustering excluding outliers and singletons
@@ -499,7 +477,8 @@ final_clusters <- final_clusters |>
   mutate(Subcluster = paste(Guild, Cluster)) 
 
 fpca_means <- fpca_means |> 
-  mutate(Subcluster = paste(Guild, Cluster)) 
+  mutate(Subcluster = paste(Guild, Cluster)) |> 
+  mutate(Subcluster = str_replace(Subcluster,"Insectivores","Insect."))
 
 # Plot clusters labelling outliers and singletons
 outliers <- initial_clusters |> 
@@ -507,7 +486,12 @@ outliers <- initial_clusters |>
   group_by(Guild) |> 
   arrange((PC[,2] > 0), (-1)^(PC[,2] > 0) * PC[,1]) |> 
   mutate(lab_y = -2.5 + 2.5 * (row_number()  - 1)/max(1,n() - 1) +
-           2.5 * (row_number()>mean(row_number())))
+           2.5 * (row_number()>mean(row_number()))) |> 
+  arrange(Species) |> 
+  add_column(Code = c("BBWA", "NHOW", "NOMO",
+                      "RUBL", "SCTA", "SMLO",
+                      "SPGR", "TRUS", "WTSP"),
+             .before = 3)
 
 final_clusters |> 
   ggplot(aes(x = PC[,1], y = PC[,2], color = factor(Cluster))) +
@@ -515,8 +499,8 @@ final_clusters |>
   geom_point(data = outliers,
              color = "red", shape = 17, size = 4, show.legend = FALSE) +
   geom_text(data = outliers,
-            aes(label = Species, x = 1, y = lab_y), color = "red", 
-            vjust = 0, hjust = 0, size = 3, show.legend = FALSE) +
+            aes(label = Code, x = 1, y = lab_y), color = "red", 
+            vjust = 0, hjust = 0, size = 6, size.unit = "pt", show.legend = FALSE) +
   geom_segment(data = outliers, 
                aes(x = PC[,1], xend = .9, y = PC[,2], yend = lab_y),
                color = "red") +
@@ -525,16 +509,7 @@ final_clusters |>
   labs(x = "FPC1",
        y = "FPC2",
        color = "Subgroup")+
-  theme(
-    axis.title.x = element_text(size = 30),  # Increase x-axis title size
-    axis.title.y = element_text(size = 30),  # Increase y-axis title size
-    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),  # Increase title size and center it
-    # Legend title
-    legend.title = element_text(size = 30),
-    legend.text = element_text(size =18),
-    # Subplot (facet) titles
-    legend.position = "none",  # This removes the legend
-    strip.text = element_text(size = 25)) + 
+  theme(legend.position = "none") + 
   ylim(c(-3.5,3.5)) +
   xlim(c(-3.5,4)) +
   geom_vline(xintercept = 0) + 
@@ -543,7 +518,7 @@ final_clusters |>
 if(figure_export){
   "plots/Cluster_Out" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height = 8)
+    ggsave(width = 15, height = 15, units = "cm")
 }
 
 # Plot original trajectories by subcluster
@@ -562,27 +537,19 @@ final_clusters |>
   filter(!(Singleton | Outlier)) |> 
   select(Species, Guild, Cluster, Subcluster) |> 
   left_join(SOCB_2019, by = "Species") |> 
+  mutate(Subcluster = str_replace(Subcluster, "Insectivores","Insect.")) |> 
   ggplot(aes(x = year, y = mr_index)) +
   geom_line(aes(group = Species), color = "orange", linewidth = 0.4) +
   geom_line(data = fpca_means, aes(x = year, y = Mean),
             color = "darkblue", linewidth = 1.5) +
   facet_manual(~Subcluster, design = layout) +
-  #facet_wrap(vars(Subcluster))+
   labs(x = "Year", y = "Relative Abundance Function") +
-  scale_x_continuous(breaks = seq(1975, 2016, by = 10)) +
-  ggtitle("Figure 3") +
-  theme_minimal()+
-  theme(
-    strip.text = element_text(size=10, face = "bold"),
-    plot.title = element_text(size = 25, face = "bold"),        # main title
-    axis.title.y = element_text(size=25 ),
-    axis.text = element_text(size = 11, face="bold"),
-    axis.title.x = element_text(size=30 ))
+  scale_x_continuous(breaks = seq(1975, 2016, by = 10)) #+ ggtitle("Figure 3") 
 
 if(figure_export){
   "plots/figure_3_all_subgroups" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height = 8)
+    ggsave(width = 15, height = 18, units = "cm")
 }
 
 # Generate LaTeX output
@@ -752,30 +719,19 @@ ggplot(segment(dendro_data)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_text(data = label(dendro_data),
             aes(x = x, y = -label_offset, label = label),
-            hjust = -0, vjust=-0.8 , angle = 90, size = 4.5) +
+            hjust = -0, vjust=-0.8 , angle = 90, size = 7, size.unit = "pt") +
   labs(x = "Subgroup", y = "Height") +
-  ggtitle("Figure 4") +
-  theme_minimal(base_size = 16) +
-  theme(
-    plot.title = element_text(size = 25, face = "bold"),        # main title
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    axis.title.x = element_text(size = 18, face = "bold"),
-    axis.title.y = element_text(size = 18, face = "bold"),
-    axis.text.y = element_text(size = 12),
-    plot.margin = margin(9, 40, 10, 10),
-  ) +
-  ggtitle("Figure 4") +
+  geom_hline(yintercept = line_heights, colour = c("blue","orange"), linetype = "dashed") +
   geom_text(data = merge_labels_df,
-            aes(x = x, y = y - (label_offset*0.2), label = label),
-            color = "blue", size = 4, fontface = "bold")+
-  ylim(-label_offset * 1.05, max(dendro_data$segments$yend))+
-geom_hline(yintercept = line_heights, colour = c("blue","orange"), linetype = "dashed", linewidth = 1)
+            aes(x = x, y = y - (label_offset*0.3), label = label),
+            color = "blue", size = 7, size.unit = "pt")+
+  ylim(-label_offset * 1.05, max(dendro_data$segments$yend)) # + ggtitle("Figure 4")
+
 
 if(figure_export){
   "plots/figure_4_dendrogram" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 12, height = 8)
+    ggsave(width = 15, height = 8, units = "cm")
 }
 
 # Plot results for the selected solutions
@@ -798,33 +754,26 @@ for(i in 1:length(clusters)){
     # Plot individual points
     geom_vline(xintercept = 0) + 
     geom_hline(yintercept = 0) +
-    geom_point(size = 2, alpha = 0.7) +
+    geom_point(alpha = 0.5, shape = 21) +
     # Plot centroids as squares in the same color
-    geom_point(data = centroids, shape = 15, size = 5) +
-    # Ensure consistent colors
-    scale_color_manual(values = rainbow(length(unique(current_species$CurrentCluster)))) +
+    geom_point(data = centroids, shape = 15, size = 2.5) +
     # Wrap legend labels to prevent long labels from cutting off
-    guides(color = guide_legend(override.aes = list(size = 4), title = "Cluster (Lineage)")) +
+    guides(color = guide_legend(title = "Cluster (Lineage)")) +
     xlim(c(-3,3)) + 
     ylim(c(-3,3)) + 
-    theme_minimal() +
     labs(
-      title = paste("Merge", merge),
-      subtitle = paste("Height:", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2)),
+      title = paste0("Merge ", merge, " (Height: ", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2),")"),
       color = "Cluster (Lineage)",
     ) +
     xlab("FPC1") + 
     ylab("FPC2") +
-    ggtitle(paste("Figure", fig_num + i - 1)) +
     theme(
-      plot.title = element_text(size = 25, face = "bold"),        # main title
-      legend.text = element_text(size = 14),
-      legend.title = element_text(size = 14),
-      axis.title.x = element_text(size=18, face="bold"),
-      axis.title.y = element_text(size=18, face="bold"),
+      legend.text = element_text(size = 7),
+      legend.title = element_text(size = 7),
       legend.box = "vertical"     # spacing between items
     )+
-    scale_color_discrete(labels = function(x) str_wrap(x, width = 67))
+    scale_color_discrete(labels = function(x) str_wrap(x, width = 67)) # + ggtitle(paste("Figure", fig_num + i - 1)) +
+    
 
   # Compute centroid trajectories and order by overall difference
   rejoined_means <- centroids |> 
@@ -858,15 +807,11 @@ for(i in 1:length(clusters)){
   plot2 <- join_data |> 
     ggplot(aes(x = year, y = mr_index)) +
     geom_line(aes(group = Species, colour = Guild), alpha = 0.6) + 
-    geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = 1.8) +
+    geom_line(data = rejoined_means, aes(y = Mean), color = "darkblue", linewidth = .75) +
     scale_color_manual(values = group_colors, drop = FALSE) +  # <- Lock color mapping
     facet_wrap(vars(label1), nrow = (cluster - 1) %/% 4 + 1) +
     labs(x = "Year", y = "Rescaled Abundance", color = "Original Group") +
-    theme_minimal() +
-    theme(strip.text = element_text(size=16, face = "bold"),
-          axis.title.y = element_text(size = 18, face = "bold"),
-          axis.title.x = element_text(size = 18, face = "bold"),
-          legend.text = element_text(size = 14),
+    theme(legend.text = element_text(size = 7),
           legend.position = "bottom",
           legend.title=element_blank())
   
@@ -874,6 +819,6 @@ for(i in 1:length(clusters)){
   
   if(figure_export){
     paste0("plots/figure_",fig_num + i -1,"_",cluster,"_cluster_solution", ".",figure_format) |> 
-      ggsave(width = 12, height = 10)
+      ggsave(width = 15, height = 15, units = "cm")
   }
 }
