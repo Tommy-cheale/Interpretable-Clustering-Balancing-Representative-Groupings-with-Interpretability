@@ -1,5 +1,5 @@
 # This code was written by TC and is used to produce plots in the paper 
-# Interpretable Clustering: Balancing Representative Groupings with Interpretability.
+# Interpretable Clustering: Balancing Representative Groupings with Understandabilty.
 
 # The code contained in this script is protected by a V3 creative commons licence
 # If you have any questions regarding this code, please contact Tommy Cheale at Tommycheale@gmail.com
