@@ -757,12 +757,12 @@ for(i in 1:length(clusters)){
     # Plot centroids as squares in the same color
     geom_point(data = centroids, shape = 15, size = 2.5) +
     # Wrap legend labels to prevent long labels from cutting off
-    guides(color = guide_legend(title = "Cluster (Lineage)")) +
+    guides(color = guide_legend(title = "Aggregate (Lineage)")) +
     xlim(c(-3,3)) + 
     ylim(c(-3,3)) + 
     labs(
       title = paste0("Merge ", merge, " (Height: ", merge_df |> filter(Merge == merge) |> pull("Height") |> round(2),")"),
-      color = "Cluster (Lineage)",
+      color = "Aggregate (Lineage)",
     ) +
     xlab("FPC1") + 
     ylab("FPC2") +
