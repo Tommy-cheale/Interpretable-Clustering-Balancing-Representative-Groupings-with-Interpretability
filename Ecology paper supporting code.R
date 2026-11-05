@@ -356,17 +356,16 @@ subdivide1 |>
   bind_rows() |> 
   ggplot(aes(x = k, y = avg_sil)) +
   geom_line() +
-  geom_point(size = 3) +
+  geom_point() +
   labs(x = "Number of Subgroups (k)",
        y = "Average Silhouette Score") +
-  theme_minimal()+
   facet_wrap(vars(Guild)) +
   scale_x_continuous(limits = c(1, 10), breaks = 1:10)
 
 if(figure_export){
   "plots/Elbow" |> 
     paste0(".",figure_format) |> 
-    ggsave(width = 8.5, height =5, units = "cm")
+    ggsave(width = 12, height =8, units = "cm")
 }
 
 # Extract data on clusters for all guilds
@@ -541,7 +540,7 @@ final_clusters |>
   ggplot(aes(x = year, y = mr_index)) +
   geom_line(aes(group = Species), color = "orange", linewidth = 0.4) +
   geom_line(data = fpca_means, aes(x = year, y = Mean),
-            color = "darkblue", linewidth = 1.5) +
+            color = "darkblue", linewidth = .75) +
   facet_manual(~Subcluster, design = layout) +
   labs(x = "Year", y = "Relative Abundance Function") +
   scale_x_continuous(breaks = seq(1975, 2016, by = 10)) #+ ggtitle("Figure 3") 
