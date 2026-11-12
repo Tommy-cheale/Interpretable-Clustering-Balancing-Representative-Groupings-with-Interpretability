@@ -543,7 +543,7 @@ final_clusters |>
             color = "darkblue", linewidth = .75) +
   facet_manual(~Subcluster, design = layout) +
   labs(x = "Year", y = "Relative Abundance Function") +
-  scale_x_continuous(breaks = seq(1975, 2016, by = 10)) #+ ggtitle("Figure 3") 
+  scale_x_continuous(breaks = c(1980,1995,2010)) #+ ggtitle("Figure 3") 
 
 if(figure_export){
   "plots/figure_3_all_subgroups" |> 
